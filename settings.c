@@ -558,6 +558,7 @@ char * settings_plugins (int argc, char * argv[], int iter) {
                         value = prop_curr->val;
                     }
                     printf ("%s = %s (default: %s)\n", prop_curr->key, value, prop_curr->def);
+                    printf ("%s\n", prop_curr->name);
                     return NULL;
                 }
             }
