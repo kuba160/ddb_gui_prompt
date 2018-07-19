@@ -30,6 +30,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
+#include "common.h"
 #include "cmd.h"
 
 DB_gui_t plugin;
@@ -64,7 +65,8 @@ void intHandler (int dummy) {
     }
     else if (intcount >= 2) {
         deadbeef->sendmessage (DB_EV_TERMINATE, 0, 0, 0);
-        close(STDIN_FILENO);
+        ui_running = 0;
+        close (STDIN_FILENO);
     }
     intcount++;
     return;
@@ -84,21 +86,31 @@ ui_start (void) {
     
     // readline completion function
     rl_attempted_completion_function = cmd_completion;
+    rl_completer_quote_characters = "\"";
 
     char *buffer;
+    char prompt[64];
     while (ui_running) {
-        #ifdef PLAYLIST_AT_PROMPT
-        ddb_playlist_t *plt;
-        plt = deadbeef->plt_get_curr();
-        char plt_name[32];
-        deadbeef->plt_get_title (plt, plt_name, 32);
-        char prompt[40];
-        sprintf (prompt, "(%s) >",plt_name);
-        deadbeef->plt_unref (plt);
+        char * prompt_path = cmd_get_path ();
+        if (prompt_path) {
+            snprintf (prompt, 64, "%s >", prompt_path);
+            prompt[0] = toupper (prompt[0]);
+        }
+        else {
+            #ifdef PLAYLIST_AT_PROMPT
+            ddb_playlist_t *plt;
+            plt = deadbeef->plt_get_curr();
+            char plt_name[32];
+            deadbeef->plt_get_title (plt, plt_name, 32);
+            deadbeef->plt_unref (plt);
+            snprintf (prompt, 64, "(%s) >",plt_name);
+            
+            #else
+            strcpy (prompt, ">");
+            #endif
+        }
         buffer = readline(prompt);
-        #else
-        buffer = readline(">");
-        #endif
+
         if (!buffer) {
             if (ui_running){
                 printf ("\n");
@@ -108,7 +120,9 @@ ui_start (void) {
                 break;
             }
         }
-        int cmd_ret = cmd (buffer);
+        int cmd_ret = -666;
+        cmd_ret = cmd (buffer);
+
         if (strlen(buffer) > 0 && buffer[0] != ' ') {
             add_history(buffer);
         }
@@ -175,7 +189,7 @@ DB_gui_t plugin = {
     .plugin.api_vmajor = 1,
     .plugin.api_vminor = 10,
     .plugin.version_major = 0,
-    .plugin.version_minor = 3,
+    .plugin.version_minor = 5,
     .plugin.type = DB_PLUGIN_GUI,
     .plugin.id = "prompt",
     .plugin.name = "Console user interface (prompt)",

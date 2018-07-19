@@ -20,48 +20,60 @@
 
     3. This notice may not be removed or altered from any source distribution.
 */
+char * cmd_get_path ();
+
+void cmd_change_path (int argc, char * argv[]);
 
 int cmd_num (char *cmd);
 
 const char *cmd_name (char *cmd);
 
-void cmd_play (int argc, char * argv[]);
+const char *dirm_name (char *cmd);
 
-void cmd_play_pause (int argc, char * argv[]);
+char * cmd_play (int argc, char * argv[], int iter);
+
+char * cmd_play_pause (int argc, char * argv[], int iter);
 
 /*char * cmd_play_generator(const char *text, int state);*/
 
-void cmd_stop (int argc, char * argv[]);
+char * cmd_stop (int argc, char * argv[], int iter);
 
-void cmd_next (int argc, char * argv[]);
+char * cmd_next (int argc, char * argv[], int iter);
 
-void cmd_prev (int argc, char * argv[]);
+char * cmd_prev (int argc, char * argv[], int iter);
 
-void cmd_seek (int argc, char * argv[]);
+char * cmd_seek (int argc, char * argv[], int iter);
 
-void cmd_signal (int argc, char * argv[]);
+char * cmd_signal (int argc, char * argv[], int iter);
 
-void cmd_volume (int argc, char * argv[]);
+char * cmd_volume (int argc, char * argv[], int iter);
 
-void cmd_help (int argc, char * argv[]);
+char * cmd_help (int argc, char * argv[], int iter);
 
-void cmd_quit (int argc, char * argv[]);
+char * cmd_quit (int argc, char * argv[], int iter);
 
-void cmd_list (int argc, char * argv[]);
+char * cmd_list (int argc, char * argv[], int iter);
 
-void cmd_playlist (int argc, char * argv[]);
+char * cmd_playlist (int argc, char * argv[], int iter);
 
-void cmd_playlists (int argc, char * argv[]);
+char * cmd_playlists (int argc, char * argv[], int iter);
 
-void cmd_info (int argc, char * argv[]);
+char * cmd_info (int argc, char * argv[], int iter);
 
-char * cmd_generator(const char *text, int state);
+char * cmd_dirm (int argc, char * argv[], int iter);
 
-char ** cmd_completion(const char *text, int start, int end);
+char * cmd_generator (const char *text, int state);
 
-#define CMD_NOTFOUND -1
-#define CMD_AMBIGOUS -2
+char * cmd_completion_iter (const char *text, int state);
+
+char ** cmd_completion (const char *text, int start, int end);
+
+#define FIND_NOTFOUND -1
+#define FIND_AMBIGUOUS -2
+#define FIND_DIRM -3
 
 int cmd_find (char * cmd);
+
+int cmd_ambiguous_print (char * cmd);
 
 int cmd (char *);
