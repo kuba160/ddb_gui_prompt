@@ -670,6 +670,7 @@ char * cmd_info (int argc, char * argv[], int iter) {
 char * cmd_dirm (int argc, char * argv[], int iter) {
     if (argc == 2 && iter != -1) {
         if (strcmp (argv[0], "cd") == 0) {
+            // todo fix changin dir
             int num = cmd_num (cmd_path_argv[0]);
             if (num == -1) {
                 return NULL;

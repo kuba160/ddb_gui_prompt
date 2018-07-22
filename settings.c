@@ -35,6 +35,30 @@ extern DB_functions_t *deadbeef;
 const char * main_s[] = {"plugins", "config", NULL};
 char * (*main_f[])(int, char *[], int) = {settings_plugins, settings_config, NULL};
 
+// Settings
+// - Sound
+//      Output plugin selection
+//      Soundcard (output device) selection
+//      /
+//      Convert 8 to 16
+//      Convert 16 to 24
+//      / Samplerate
+//      Samplerate override
+//          Direct/Dependent samplerate
+//          Direct samplerate
+//          48 kHz Samplerate
+//          44.1 kHz Samplerate
+// - Playback
+//      Replayagin
+//          Replaygain mode
+//          Replaygain processing
+//          Replaygain preamp
+//          Preamp without replaygain
+//      Add to playlist cli_playlist_name
+//      Resume session on startup
+//      
+
+
 int main_num (char *cmd) {
     if (!cmd) {
         return -1;
@@ -178,173 +202,10 @@ char * settings_config (int argc, char * argv[], int iter) {
     return NULL;
 }
 
-struct property {
-    char * name;
-    int type;
-    char * type_string;
-    int type_min;
-    int type_max;
-    int type_step;
-    int type_count;
-    char * key;
-    char * val;
-    char * def;
-};
-
-enum property_type {
-    TYPE_ENTRY, TYPE_PASSWORD, TYPE_FILE, TYPE_CHECKBOX, TYPE_HSCALE, TYPE_SPINBTN, TYPE_VSCALE, TYPE_SELECT
-};
-
-// internal use only
-struct property * property_gen (struct DB_plugin_s *plugin, int iter) {
-    if (!plugin->configdialog) {
-        return NULL;
-    }
-    struct property * temp = malloc (sizeof(struct property));
-    memset (temp, 0, sizeof(struct property));
-    if (!temp) {
-        return NULL;
-    }
-    int i;
-    // use internal buffer
-    char * ptr_orig = malloc (strlen(plugin->configdialog) + 1);
-    strcpy (ptr_orig, plugin->configdialog);
-    char * ptr = ptr_orig;
-    for (i = 0; i < iter; i++) {
-        ptr = strchr (ptr, '\n');
-        if (!ptr) {
-            // out of options
-            free (ptr_orig);
-            free (temp);
-            return NULL;
-        }
-        ptr++;
-        //
-    }
-    // todo escape chars
-    char ** argv = argv_alloc (ptr);
-
-    if (!argv[0]) {
-        argv_free (argv);
-        free (ptr_orig);
-        free (temp);
-        return NULL;
-    }
-
-    // PROPERTY name type key def
-    if (strcmp (argv[0], "property") != 0) {
-        printf ("invalid header\n");
-        // todo free
-    }
-    temp->name = strdup(argv[1]);
-    // type
-    if (strcmp (argv[2], "entry") == 0) {
-        temp->type = TYPE_ENTRY;
-    }
-    else if (strcmp (argv[2], "password") == 0) {
-        temp->type = TYPE_PASSWORD;
-    }
-    else if (strcmp (argv[2], "file") == 0) {
-        temp->type = TYPE_FILE;
-    }
-    else if (strcmp (argv[2], "checkbox") == 0) {
-        temp->type = TYPE_CHECKBOX;
-    }
-    else if (strncmp (argv[2], "hscale", 6) == 0) {
-        temp->type = TYPE_HSCALE;
-        // todo options [min, max, step]
-
-    }
-    else if (strncmp (argv[2], "spinbtn", 7) == 0) {
-        temp->type = TYPE_SPINBTN;
-        // todo options [min, max, step]
-    }
-    else if (strncmp (argv[2], "vscale", 6) == 0) {
-        temp->type = TYPE_VSCALE;
-        // todo options [min, max, step]
-    }
-    else if (strncmp (argv[2], "select", 6) == 0) {
-        temp->type = TYPE_SELECT;
-        // todo options [count]
-    }
-    temp->type_string = strdup (argv[2]);
-
-    temp->key = strdup(argv[3]);
-
-    // get curr value
-    {
-        DB_conf_item_t *item = NULL;
-        item = deadbeef->conf_find (temp->key, item);
-        if (item) {
-            temp->val = strdup(item->value);
-        }
-    }
-
-    // strip last chars ;\n
-    int finished = 0;
-    {
-        char * semicolon = strchr (argv[4], ';');
-        if (semicolon) {
-            *semicolon = 0;
-            finished = 1;
-        }
-    }
-    temp->def = strdup (argv[4]);
-
-    if (finished) {
-        argv_free (argv);
-        return temp;
-    }
-
-    // TODO handle complicated types
-    /*
-    ptr = strtok (ptr," ");
-    // todo handle \""
-    while (ptr != NULL) {
-        if (a == 0) {
-            if (strncmp (ptr, "property", strlen("property") ) != 0) {
-                // not valid option!
-                // todo handle
-                free (ptr_orig);
-                free (temp);
-                return NULL;
-            }
-        }
-        if (a == 1) {
-            // name
-        }
-        if (a == 2) {
-            // type
-        }
-        if (a == 3) {
-            // key
-        }
-        if (a == 4) {
-            // def
-        }
-        printf ()
-        // = strdup (pch);
-
-        a++;
-    }
-
-    */
-    return temp;
-}
-
-void property_free (struct property * prop) {
-    free (prop->name);
-    free (prop->type_string);
-    free (prop->key);
-    free (prop->val);
-    free (prop->def);
-    free (prop);
-    return;
-}
-
 // MAX_PLUGINS = 100 (defined in deadbeef/plugins.c)
 struct DB_plugin_s * plugins[101] = {NULL};
 const char * plugin_names[128];
+property_t ** plugin_properties[101];
 int plug_table_generated = 0;
 
 int plugins_num (char * name_o) {
@@ -389,6 +250,13 @@ void plug_table_generate () {
             }
             else if (plgs[i]->name) {
                 plugin_names[pos] = plgs[i]->name;
+            }
+            // properties
+            if (plgs[i]->configdialog) {
+                plugin_properties[i] = properties_alloc (plgs[i]->configdialog);
+            }
+            else {
+                plugin_properties[i] = NULL;
             }
             pos++;
             //}
@@ -479,13 +347,9 @@ char * settings_plugins (int argc, char * argv[], int iter) {
                 // list options
                 int i;
                 struct property * prop;
-                for (i = 0; 1; i++) {
-                    prop = property_gen (plugins[num], i);
-                    if (!prop) {
-                        break;
-                    }
-                    printf ("%s - %s (default: %s)\n", prop->key, prop->name, prop->def);
-                    property_free (prop);
+                for (i = 0; (prop = plugin_properties[num][i]); i++) {
+                    printf ("%d: %s\n", i, prop->name);
+                    printf ("%s = %s\n(default: %s)\n\n", prop->key, prop->val, prop->def);
                 }
 
             }
@@ -505,62 +369,23 @@ char * settings_plugins (int argc, char * argv[], int iter) {
     if (argc == 4) {
         if (strcmp (argv[2],"config") == 0) {
             if (plugins[num]->configdialog) {
-                if (iter != -1) {
-                    int i;
-                    int j = 0;
-                    struct property * prop;
-                    for (i = 0; 1; i++) {
-                        prop = property_gen (plugins[num], i);
-                        if (!prop) {
-                            break;
-                        }
-                        char * comp = strdup_unescaped (argv[3]);
-                        if (strncmp (comp, prop->key, strlen (comp)) == 0) {
-                            if (j == iter) {
-                                char * out = strdup (prop->key);
-                                property_free (prop);
-                                return out;
-                            }
-                            else {
-                                j++;
-                            }
-                        }
-                        property_free (prop);
-                    }
+                TAB_COMPLETION_PROPERTIES(3,plugin_properties[num]);
+                property_t * prop = property_get (plugin_properties[num], argv[3]);
+                if (!prop) {
+                    printf ("Property %s for plugin %s not found.\n", argv[3], plugin_names[num]);
                     return NULL;
                 }
-                else {
-                    // find prop
-                    struct property * prop_curr = 0;
-                    {
-                        int i;
-                        struct property * prop;
-                        for (i = 0; 1; i++) {
-                            prop = property_gen (plugins[num], i);
-                            if (!prop) {
-                                break;
-                            }
-                            char * comp = strdup_unescaped (argv[3]);
-                            if (strcmp (comp, prop->key) == 0) {
-                                prop_curr = prop;
-                                break;
-                            }
-                            property_free (prop);
-                        }
-                    }
-                    if (!prop_curr) {
-                        printf ("Property %s for plugin %s not found.\n", argv[3], plugin_names[num]);
-                        return NULL;
-                    }
-                    // print option
-                    char * value = "(no value)";
-                    if (prop_curr->val) {
-                        value = prop_curr->val;
-                    }
-                    printf ("%s = %s (default: %s)\n", prop_curr->key, value, prop_curr->def);
-                    printf ("%s\n", prop_curr->name);
-                    return NULL;
+                // print option
+                char * value = "(no value)";
+                if (prop->val) {
+                    value = prop->val;
                 }
+                printf ("%s\n", prop->name);
+                printf ("%s = %s (default: %s)\n", prop->key, value, prop->def);
+                return NULL;
+            }
+            else {
+                return CMD_NOTFOUND;
             }
             return NULL;
         }
@@ -573,32 +398,12 @@ char * settings_plugins (int argc, char * argv[], int iter) {
                 }
                 else {
                     // find prop
-                    struct property * prop_curr = 0;
-                    {
-                        int i;
-                        struct property * prop;
-                        for (i = 0; 1; i++) {
-                            prop = property_gen (plugins[num], i);
-                            if (!prop) {
-                                break;
-                            }
-                            char * comp = strdup_unescaped (argv[3]);
-                            if (strcmp (comp, prop->key) == 0) {
-                                prop_curr = prop;
-                                break;
-                            }
-                            property_free (prop);
-                        }
-                    }
+                    struct property * prop_curr = property_get (plugin_properties[num], argv[3]);
                     if (!prop_curr) {
                         printf ("Property %s for plugin %s not found.\n", argv[3], plugin_names[num]);
                         return NULL;
                     }
-                    // todo evaluate prop_curr->type_string
-                    char *config_argv[] = {"config_i", argv[3], "string", argv[4], NULL };
-                    settings_config (4, config_argv, -1);
-                    property_free (prop_curr);
-                    //printf ("config option called, todo\n");
+                    property_set (prop_curr, argv[3]);
                 }
             }
             return NULL;

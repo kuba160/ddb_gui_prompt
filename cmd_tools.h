@@ -22,6 +22,34 @@
 */
 // Useful definitions/functions for command handling / tab-completion
 
+// Type definitions (needed before everything else)
+
+typedef struct property {
+	// Full name
+    char * name;
+    // type, one of enum property_type
+    int type;
+    // type, string format
+    char * type_string;
+    // min value of type (if supported by type)
+    int type_min;
+    // max value of type (if supported by type)
+    int type_max;
+    // slider step (if supported by type)
+    int type_step;
+    // count of values (if supported by type)
+    int type_count;
+    // config option for property
+    char * key;
+    // current value of property
+    char * val;
+    // array of possible values (if supported by type)
+    char ** val_possible;
+    // default value of property
+    char * def;
+} property_t;
+
+
 // Return values for commands, CMD_EXECUTED equals NULL, can change in future
 #define CMD_DIRECTORY "Directory"
 #define CMD_EXECUTED  0//"Executed"
@@ -64,6 +92,11 @@
 		return cmd_tab_complete_ata(artist, title, album, argv, iter); \
 	};
 
+// tab-complete argument number X with Y properties
+#define TAB_COMPLETION_PROPERTIES(X,Y) \
+	if (argc == (1+X) && iter != -1) {return cmd_tab_complete_properties(Y, argv, iter);}
+
+
 // end tab-completion processing
 #define TAB_COMPLETION_END NO_TAB_COMPLETION
 
@@ -76,6 +109,8 @@ char * cmd_tab_complete_playlists (char **argv, int iter);
 char * cmd_tab_complete_ata (char * artist, char * title, char * album, char **argv, int iter);
 
 char * cmd_tab_complete_meta (char * meta, char **argv, int iter);
+
+char * cmd_tab_complete_properties (struct property ** properties, char **argv, int iter);
 
 // get items after data
 
@@ -103,3 +138,25 @@ char ** argv_alloc (char * cmd);
 void argv_free (char ** argv);
 
 int argv_cat (char ** to, char ** from);
+
+// Properties
+
+enum property_type {
+    TYPE_ENTRY, TYPE_PASSWORD, TYPE_FILE, TYPE_CHECKBOX, TYPE_HSCALE, TYPE_SPINBTN, TYPE_VSCALE, TYPE_SELECT
+};
+
+int properties_count (struct property ** properties);
+
+property_t * property_get (property_t **properties, const char * key);
+
+int property_set (property_t *property, const char * value);
+
+struct property ** properties_alloc (const char * string);
+
+struct property * property_alloc (char * string);
+
+void properties_free (struct property ** properties);
+
+void property_free (struct property * property);
+
+int properties_cat (struct property ** to, struct property ** from);

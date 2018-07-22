@@ -31,6 +31,8 @@ extern DB_functions_t *deadbeef;
 
 // default argv size, will be reallocated if needed
 #define ARGV_MAX 16
+// default property size, will be reallocated if needed
+#define PROPERTIES_MAX 8
 
 char ** temp_table = 0;
 
@@ -312,6 +314,20 @@ char * cmd_tab_complete_meta (char * meta_s, char **argv, int iter) {
 		temp_table = 0;
 	}
 	return ret;
+}
+
+// tab-complete after properties
+char * cmd_tab_complete_properties (struct property **table, char **argv, int iter) {
+	int i;
+	const char * strings[32];
+	for (i = 0; table[i]; i++) {
+		if (i >= 32) {
+			break;
+		}
+		strings[i] = table[i]->key;
+	}
+	strings[i] = NULL;
+	return cmd_tab_complete_table (strings, argv, iter);
 }
 
 // get item based on data (artist/title/album and playlist)
@@ -596,6 +612,239 @@ int argv_cat (char ** to, char ** from) {
 	int j;
 	for (j = 0; from[j] != NULL; j++) {
 		to[i] = strdup (from[j]);
+		i++;
+	}
+	to[i] = NULL;
+	return 0;
+}
+
+// Properties
+
+int properties_count (property_t **properties) {
+	int i;
+	for (i = 0; properties[i] != NULL; i++);
+	return i;
+}
+
+property_t * property_get (property_t **properties, const char * key) {
+	int i;
+	for (i = 0; properties[i] != NULL; i++) {
+		if (strcmp(properties[i]->key, key) == 0) {
+			return properties[i];
+		}
+	}
+	return NULL;
+}
+
+int property_set (property_t *property, const char * value) {
+	// todo error checking
+	printf ("property_set called but has no error checking!\n");
+    // todo evaluate prop_curr->type_string
+    // char *config_argv[] = {"config_i", argv[3], "string", argv[4], NULL };
+    //settings_config (4, config_argv, -1);
+	deadbeef->conf_set_str (property->key, value);
+	return 0;
+}
+
+property_t ** properties_alloc (const char * cmd) {
+    // build properties list
+    int properties_size = PROPERTIES_MAX;
+    property_t ** properties = malloc (properties_size * sizeof(struct property *));
+
+    if (!cmd) {
+    	// return empty list
+        properties[0] = NULL;
+        return properties;
+    }
+    char buffer[strlen(cmd)+1];
+    strcpy (buffer, cmd);
+
+    char * ptr = buffer;
+ 	char * nl_ptr = ptr;
+    char * endptr = strrchr (buffer, 0);
+    int i;
+    int to_break = 0;
+    for (i = 0; ptr < endptr; i++) {
+        if (i >= properties_size) {
+            properties_size *= 2;
+            properties = realloc (properties, properties_size * sizeof(char *));
+            if (!properties) {
+                printf ("Failed to realloc memory!\n");
+                return NULL;
+            }
+        }
+    	//
+    	nl_ptr = strchr (ptr, '\n');
+    	if (!nl_ptr) {
+    		// probably last char
+    		to_break = 1;
+    	}
+    	else {
+    		*nl_ptr = 0;
+    	}
+    	properties[i] = property_alloc (ptr);
+        if (!properties[i] || to_break) {
+            // out of options
+            break;
+        }
+        else {
+        	// next
+        	ptr = ++nl_ptr;
+        }
+    }
+    properties[i] = NULL;
+    return properties;
+}
+
+struct property * property_alloc (char * string) {
+    if (!string || strlen(string) == 0) {
+        return NULL;
+    }
+    struct property * temp = malloc (sizeof(struct property));
+    memset (temp, 0, sizeof(struct property));
+    if (!temp) {
+        return NULL;
+    }
+    // todo escape chars
+    char ** argv = argv_alloc (string);
+
+    if (!argv[0]) {
+        argv_free (argv);
+        free (temp);
+        return NULL;
+    }
+
+    // PROPERTY name type key def
+    if (strcmp (argv[0], "property") != 0) {
+        printf ("invalid header\n");
+        argv_free (argv);
+        free (temp);
+        return NULL;
+    }
+    temp->name = strdup_unescaped (argv[1]);
+    // type
+    if (strcmp (argv[2], "entry") == 0) {
+        temp->type = TYPE_ENTRY;
+    }
+    else if (strcmp (argv[2], "password") == 0) {
+        temp->type = TYPE_PASSWORD;
+    }
+    else if (strcmp (argv[2], "file") == 0) {
+        temp->type = TYPE_FILE;
+    }
+    else if (strcmp (argv[2], "checkbox") == 0) {
+        temp->type = TYPE_CHECKBOX;
+    }
+    else if (strncmp (argv[2], "hscale", 6) == 0) {
+        temp->type = TYPE_HSCALE;
+        // todo options [min, max, step]
+
+    }
+    else if (strncmp (argv[2], "spinbtn", 7) == 0) {
+        temp->type = TYPE_SPINBTN;
+        // todo options [min, max, step]
+    }
+    else if (strncmp (argv[2], "vscale", 6) == 0) {
+        temp->type = TYPE_VSCALE;
+        // todo options [min, max, step]
+    }
+    else if (strncmp (argv[2], "select", 6) == 0) {
+        temp->type = TYPE_SELECT;
+        // todo options [count]
+    }
+    // todo switch to const
+    temp->type_string = strdup (argv[2]);
+
+    temp->key = strdup(argv[3]);
+
+    // get curr value
+    {
+        DB_conf_item_t *item = NULL;
+        item = deadbeef->conf_find (temp->key, item);
+        if (item) {
+            temp->val = strdup(item->value);
+        }
+    }
+
+    // strip last chars ;\n
+    int finished = 0;
+    {
+        char * semicolon = strchr (argv[4], ';');
+        if (semicolon) {
+            *semicolon = 0;
+            finished = 1;
+        }
+    }
+    temp->def = strdup (argv[4]);
+
+    if (finished) {
+        argv_free (argv);
+        return temp;
+    }
+
+    // TODO handle complicated types
+    /*
+    ptr = strtok (ptr," ");
+    // todo handle \""
+    while (ptr != NULL) {
+        if (a == 0) {
+            if (strncmp (ptr, "property", strlen("property") ) != 0) {
+                // not valid option!
+                // todo handle
+                free (ptr_orig);
+                free (temp);
+                return NULL;
+            }
+        }
+        if (a == 1) {
+            // name
+        }
+        if (a == 2) {
+            // type
+        }
+        if (a == 3) {
+            // key
+        }
+        if (a == 4) {
+            // def
+        }
+        printf ()
+        // = strdup (pch);
+
+        a++;
+    }
+
+    */
+    return temp;
+}
+
+void properties_free (property_t ** argv) {
+	int i;
+	for (i = 0; argv[i] != NULL; i++)
+		free (argv[i]);
+	free (argv);
+    return;
+}
+
+void property_free (struct property * prop) {
+    free (prop->name);
+    free (prop->type_string);
+    free (prop->key);
+    free (prop->val);
+    free (prop->def);
+    free (prop);
+    return;
+}
+
+int properties_cat (property_t ** to, property_t ** from) {
+	int i;
+	for (i = 0; to[i] != NULL; i++);
+	int j;
+	for (j = 0; from[j] != NULL; j++) {
+		//
+		property_t *temp = malloc (sizeof(property_t));
+		memcpy (temp, from[j], sizeof(property_t));
+		to[i] = temp;
 		i++;
 	}
 	to[i] = NULL;
