@@ -30,7 +30,7 @@ typedef struct property {
     // type, one of enum property_type
     int type;
     // type, string format
-    char * type_string;
+    const char * type_string;
     // min value of type (if supported by type)
     int type_min;
     // max value of type (if supported by type)
@@ -96,6 +96,13 @@ typedef struct property {
 #define TAB_COMPLETION_PROPERTIES(X,Y) \
 	if (argc == (1+X) && iter != -1) {return cmd_tab_complete_properties(Y, argv, iter);}
 
+// tab-complete argument number X with options from Z properties (if possible) for key Y
+#define TAB_COMPLETION_PROPERTIES_OPTION(X,Y,Z) \
+	if (argc == (1+X) && argc >= (1+Y) && iter != -1) { \
+		property_t *prop = property_get (Z, argv[Y]); \
+		if (prop && prop->val_possible) {return cmd_tab_complete_table((const char **)prop->val_possible, argv, iter);} \
+		return NULL; \
+	}
 
 // end tab-completion processing
 #define TAB_COMPLETION_END NO_TAB_COMPLETION
@@ -158,5 +165,9 @@ struct property * property_alloc (char * string);
 void properties_free (struct property ** properties);
 
 void property_free (struct property * property);
+
+//void properties_free (struct property ** properties);
+
+void property_update (struct property * property);
 
 int properties_cat (struct property ** to, struct property ** from);

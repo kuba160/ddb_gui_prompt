@@ -23,6 +23,8 @@
 
 char * settings_config (int argc, char * argv[], int iter);
 
+char * settings_output (int argc, char * argv[], int iter);
+
 char * settings_plugins (int argc, char * argv[], int iter);
 
 char * cmd_settings (int argc, char * argv[], int iter);

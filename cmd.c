@@ -905,6 +905,11 @@ int cmd_find (char * cmd) {
                         }
                     }
                     if (!exists) {
+                        // hack: enforce dirm when manually detected that we are in dir
+                        if (cmd_path_argv[0]) {
+                            exact_cmd = FIND_DIRM;
+                            break;
+                        }
                         possible_cmds[poss_p] = FIND_DIRM;
                         poss_p++;
                     }
@@ -925,7 +930,7 @@ int cmd_find (char * cmd) {
     	return possible_cmds[0];
     }
     else {
-    	// fuction used internally, use cmd_ambiguous ambiguous 
+        // use cmd_ambiguous_print to show available commands
     	return FIND_AMBIGUOUS;
     }
 }

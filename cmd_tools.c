@@ -630,6 +630,7 @@ property_t * property_get (property_t **properties, const char * key) {
 	int i;
 	for (i = 0; properties[i] != NULL; i++) {
 		if (strcmp(properties[i]->key, key) == 0) {
+            property_update (properties[i]);
 			return properties[i];
 		}
 	}
@@ -642,6 +643,29 @@ int property_set (property_t *property, const char * value) {
     // todo evaluate prop_curr->type_string
     // char *config_argv[] = {"config_i", argv[3], "string", argv[4], NULL };
     //settings_config (4, config_argv, -1);
+    if (property->type == TYPE_SELECT) {
+        char *value_unescaped = strdup_unescaped (value);
+        int i;
+        for (i = 0; property->val_possible[i]; i++) {
+            if (strcmp (property->val_possible[i], value_unescaped) == 0) {
+                printf ("%s = %s\n", property->key, value);
+                free (value_unescaped);
+                deadbeef->conf_set_int (property->key, i);
+                return 0;
+            }
+        }
+        free (value_unescaped);
+        // try to set as num
+        char *endptr;
+        int num = strtol (value, &endptr, 10);
+        if (value != endptr && num < property->type_count) {
+            deadbeef->conf_set_int (property->key, num);
+            printf ("%s = \"%s\"\n", property->key, property->val_possible[num]);
+            return 0;
+        }
+        printf ("Failed to set property %s.\n", property->key);
+        return -1;
+    }
 	deadbeef->conf_set_str (property->key, value);
 	return 0;
 }
@@ -706,7 +730,16 @@ struct property * property_alloc (char * string) {
         return NULL;
     }
     // todo escape chars
-    char ** argv = argv_alloc (string);
+    char string_f[strlen(string)+1];
+    strcpy (string_f, string);
+    // strip last chars ;\n
+    {
+        char * semicolon = strrchr (string_f, ';');
+        if (semicolon) {
+            *semicolon = 0;
+        }
+    }
+    char ** argv = argv_alloc (string_f);
 
     if (!argv[0]) {
         argv_free (argv);
@@ -725,35 +758,149 @@ struct property * property_alloc (char * string) {
     // type
     if (strcmp (argv[2], "entry") == 0) {
         temp->type = TYPE_ENTRY;
+        temp->type_string = "entry";
     }
     else if (strcmp (argv[2], "password") == 0) {
         temp->type = TYPE_PASSWORD;
+        temp->type_string = "password";
     }
     else if (strcmp (argv[2], "file") == 0) {
         temp->type = TYPE_FILE;
+        temp->type_string = "file";
     }
     else if (strcmp (argv[2], "checkbox") == 0) {
         temp->type = TYPE_CHECKBOX;
+        temp->type_string = "checkbox";
     }
     else if (strncmp (argv[2], "hscale", 6) == 0) {
         temp->type = TYPE_HSCALE;
-        // todo options [min, max, step]
-
+        temp->type_string = "hscale";
+        // options
+        {
+            char *pt = argv[2]+7;
+            char *array[3] = {pt, NULL, NULL};
+            array[1] = strchr (array[0], ',') + 1;
+            array[2] = strchr (array[1], ',') + 1;
+            {
+                char *comma = pt;
+                while ((comma = strchr (comma, ','))) {
+                    *comma = 0;
+                }
+            }
+            char *endptr = NULL;
+            temp->type_min = strtol (array[0], &endptr, 10);
+            if (array[0] == endptr) {
+                printf ("type min failed\n");
+            }
+            temp->type_max = strtol (array[0], &endptr, 10);
+            if (array[0] == endptr) {
+                printf ("type max failed\n");
+            }
+            temp->type_step = strtol (array[0], &endptr, 10);
+            if (array[0] == endptr) {
+                printf ("type step failed\n");
+            }
+        }
     }
     else if (strncmp (argv[2], "spinbtn", 7) == 0) {
         temp->type = TYPE_SPINBTN;
-        // todo options [min, max, step]
+        temp->type_string = "spinbtn";
+        // options
+        {
+            char *pt = argv[2]+8;
+            char *array[3] = {pt, NULL, NULL};
+            array[1] = strchr (array[0], ',') + 1;
+            array[2] = strchr (array[1], ',') + 1;
+            {
+                char *comma = pt;
+                while ((comma = strchr (comma, ','))) {
+                    *comma = 0;
+                }
+            }
+            char *endptr = NULL;
+            temp->type_min = strtol (array[0], &endptr, 10);
+            if (array[0] == endptr) {
+                printf ("type min failed\n");
+            }
+            temp->type_max = strtol (array[0], &endptr, 10);
+            if (array[0] == endptr) {
+                printf ("type max failed\n");
+            }
+            temp->type_step = strtol (array[0], &endptr, 10);
+            if (array[0] == endptr) {
+                printf ("type step failed\n");
+            }
+        }
     }
     else if (strncmp (argv[2], "vscale", 6) == 0) {
         temp->type = TYPE_VSCALE;
-        // todo options [min, max, step]
+        temp->type_string = "vscale";
+        // options
+        {
+            char *pt = argv[2]+7;
+            char *array[3] = {pt, NULL, NULL};
+            array[1] = strchr (array[0], ',') + 1;
+            array[2] = strchr (array[1], ',') + 1;
+            {
+                char *comma = pt;
+                while ((comma = strchr (comma, ','))) {
+                    *comma = 0;
+                }
+            }
+            char *endptr = NULL;
+            temp->type_min = strtol (array[0], &endptr, 10);
+            if (array[0] == endptr) {
+                printf ("type min failed\n");
+            }
+            temp->type_max = strtol (array[0], &endptr, 10);
+            if (array[0] == endptr) {
+                printf ("type max failed\n");
+            }
+            temp->type_step = strtol (array[0], &endptr, 10);
+            if (array[0] == endptr) {
+                printf ("type step failed\n");
+            }
+        }
     }
     else if (strncmp (argv[2], "select", 6) == 0) {
         temp->type = TYPE_SELECT;
-        // todo options [count]
+        temp->type_string = "select";
+        // options
+        {
+            char * count_s = argv[2]+7;
+            char *endptr = NULL;
+            temp->type_count = strtol (count_s, &endptr, 10);
+            if (count_s == endptr) {
+                printf ("type count failed\n");
+            }
+        }
     }
-    // todo switch to const
-    temp->type_string = strdup (argv[2]);
+
+    // default values
+    if (temp->type == TYPE_SELECT) {
+        // gen temp->val_possible
+        temp->val_possible = malloc (sizeof (char *) * (temp->type_count +1));
+        if (!temp->val_possible) {
+            argv_free (argv);
+            free (temp);
+            return NULL;
+        }
+        int i;
+        for (i = 0; i < temp->type_count; i++) {
+            temp->val_possible[i] = strdup_unescaped (argv[5+i]);
+        }
+        temp->val_possible[i] = NULL;
+        // gen temp->def
+        char *endptr;
+        int num = strtol (argv[4], &endptr, 10);
+        if (endptr == argv[4]) {
+            printf ("strtol failed\n");
+        }
+        temp->def = strdup (temp->val_possible[num]);
+    }
+    else {
+        temp->def = strdup_unescaped (argv[4]);
+    }
 
     temp->key = strdup(argv[3]);
 
@@ -762,59 +909,21 @@ struct property * property_alloc (char * string) {
         DB_conf_item_t *item = NULL;
         item = deadbeef->conf_find (temp->key, item);
         if (item) {
-            temp->val = strdup(item->value);
-        }
-    }
-
-    // strip last chars ;\n
-    int finished = 0;
-    {
-        char * semicolon = strchr (argv[4], ';');
-        if (semicolon) {
-            *semicolon = 0;
-            finished = 1;
-        }
-    }
-    temp->def = strdup (argv[4]);
-
-    if (finished) {
-        argv_free (argv);
-        return temp;
-    }
-
-    // TODO handle complicated types
-    /*
-    ptr = strtok (ptr," ");
-    // todo handle \""
-    while (ptr != NULL) {
-        if (a == 0) {
-            if (strncmp (ptr, "property", strlen("property") ) != 0) {
-                // not valid option!
-                // todo handle
-                free (ptr_orig);
-                free (temp);
-                return NULL;
+            if (temp->type == TYPE_SELECT) {
+                char *endptr;
+                int num = strtol (item->value, &endptr, 10);
+                if (endptr == item->value) {
+                    printf ("strtol failed\n");
+                }
+                temp->val = strdup (temp->val_possible[num]);
+            }
+            else {
+                temp->val = strdup(item->value);
             }
         }
-        if (a == 1) {
-            // name
-        }
-        if (a == 2) {
-            // type
-        }
-        if (a == 3) {
-            // key
-        }
-        if (a == 4) {
-            // def
-        }
-        printf ()
-        // = strdup (pch);
-
-        a++;
     }
-
-    */
+    //
+    argv_free (argv);
     return temp;
 }
 
@@ -828,12 +937,36 @@ void properties_free (property_t ** argv) {
 
 void property_free (struct property * prop) {
     free (prop->name);
-    free (prop->type_string);
     free (prop->key);
     free (prop->val);
+    if (prop->val_possible) {
+        int i;
+        for (i = 0; prop->val_possible[i]; i++)
+            free (prop->val_possible[i]);
+        free (prop->val_possible);
+    }
     free (prop->def);
     free (prop);
     return;
+}
+
+void property_update (struct property * property) {
+    DB_conf_item_t *item = NULL;
+    item = deadbeef->conf_find (property->key, item);
+    if (!item || strcmp(property->val, item->value) == 0) {
+        return;
+    }
+    char *new = item->value;
+    if (property->type == TYPE_SELECT) {
+        char *endptr;
+        int num = strtol (item->value, &endptr, 10);
+        if (endptr == item->value) {
+            printf ("strtol failed\n");
+        }
+        new = property->val_possible[num];
+    }
+    free (property->val);
+    property->val = strdup (new);
 }
 
 int properties_cat (property_t ** to, property_t ** from) {

@@ -348,6 +348,7 @@ char * settings_plugins (int argc, char * argv[], int iter) {
                 int i;
                 struct property * prop;
                 for (i = 0; (prop = plugin_properties[num][i]); i++) {
+                    property_update (prop);
                     printf ("%d: %s\n", i, prop->name);
                     printf ("%s = %s\n(default: %s)\n\n", prop->key, prop->val, prop->def);
                 }
@@ -393,9 +394,8 @@ char * settings_plugins (int argc, char * argv[], int iter) {
     if (argc == 5) {
         if (strcmp (argv[2],"config") == 0) {
             if (plugins[num]->configdialog) {
-                if (iter != -1) {
-                    return NULL;
-                }
+                TAB_COMPLETION_PROPERTIES_OPTION(4,3,plugin_properties[num]) 
+
                 else {
                     // find prop
                     struct property * prop_curr = property_get (plugin_properties[num], argv[3]);
@@ -403,7 +403,7 @@ char * settings_plugins (int argc, char * argv[], int iter) {
                         printf ("Property %s for plugin %s not found.\n", argv[3], plugin_names[num]);
                         return NULL;
                     }
-                    property_set (prop_curr, argv[3]);
+                    property_set (prop_curr, argv[4]);
                 }
             }
             return NULL;
