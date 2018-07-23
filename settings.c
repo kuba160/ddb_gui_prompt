@@ -32,8 +32,8 @@
 
 extern DB_functions_t *deadbeef;
 
-const char * main_s[] = {"plugins", "config", NULL};
-char * (*main_f[])(int, char *[], int) = {settings_plugins, settings_config, NULL};
+const char * main_s[] = {"plugins", "config", "output", NULL};
+char * (*main_f[])(int, char *[], int) = {settings_plugins, settings_config, settings_output, NULL};
 
 // Settings
 // - Sound
@@ -412,6 +412,95 @@ char * settings_plugins (int argc, char * argv[], int iter) {
     TAB_COMPLETION_END;
     return CMD_NOTFOUND;
 }
+
+// output
+struct DB_output_s * plugins_output[8] = {NULL};
+const char * plugins_output_names[8] = {NULL};
+char plugins_output_initiated = 0;
+
+char * settings_output (int argc, char * argv[], int iter) {
+    if (!plugins_output_initiated) {
+        struct DB_output_s ** plgs = deadbeef->plug_get_output_list ();
+        int i;
+        for (i = 0; plgs[i]; i++) {
+            if (i >= 8) {
+                printf ("plugins_output max!\n");
+                break;
+            }
+            plugins_output[i] = plgs[i];
+            if (plgs[i]->plugin.id)
+                plugins_output_names[i] = plgs[i]->plugin.id;
+            else
+                plugins_output_names[i] = plgs[i]->plugin.name;
+        }
+        plugins_output[i] = NULL;
+        plugins_output_names[i] = NULL;
+    }
+
+    if (argc == -1) {
+        printf ("output: select output plugin and device\n");
+        printf ("\tplugin - show or select plugin\n");
+        printf ("\tdevice - show or select output device\n");
+        return NULL;
+    }
+    else if (argc == 1) {
+        return CMD_DIRECTORY;
+    }
+    else if (argc >= 2) {
+        const char * options[] = {"plugin", "device", NULL};
+        TAB_COMPLETION_TABLE(1, options);
+
+        struct DB_output_s *curr = deadbeef->get_output ();
+        if (strcmp (argv[1], "plugin") == 0) {
+            if (argc == 3) {
+                TAB_COMPLETION_TABLE(2, plugins_output_names);
+                // find plugin
+                struct DB_output_s *new_output = NULL;
+                int i;
+                for (i = 0; plugins_output_names[i]; i++) {
+                    if (strcmp (plugins_output_names[i], argv[2]) == 0) {
+                        new_output = plugins_output[i];
+                        break;
+                    }
+                }
+                if (!new_output) {
+                    printf ("Output plugin %s not found.\n", argv[2]);
+                    return CMD_EXECUTED;
+                }
+                deadbeef->conf_set_str ("output_plugin", new_output->plugin.name);
+                deadbeef->sendmessage (DB_EV_REINIT_SOUND, 0, 0, 0);
+                return NULL;
+            }
+            else if (argc > 3) {
+                return CMD_NOTFOUND;
+            }
+            printf ("Available output plugins:\n");
+            int i;
+            for (i = 0; plugins_output[i]; i++) {
+                const char *current_s = "";
+                if (curr == plugins_output[i]) {
+                    printf (KWHT);
+                    current_s = "(current)";
+                }
+                printf ("%d: %s (%s) %s\n" KNRM,i, plugins_output[i]->plugin.id, plugins_output[i]->plugin.name, current_s);
+            }
+            return CMD_EXECUTED;
+        }
+        else if (strcmp (argv[1], "device") == 0) {
+            const char *name = 0;
+            if (curr->plugin.id) {
+                name = curr->plugin.id;
+            }
+            else {
+                name = curr->plugin.name;
+            }
+            printf ("Available output devices for %s:\n", name);
+            // TODO
+        }
+    }
+    return NULL;
+}
+
 
 char * cmd_settings (int argc, char * argv[], int iter) {
     TAB_COMPLETION_TABLE(1, main_s);
