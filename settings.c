@@ -63,12 +63,12 @@ int main_num (char *cmd) {
     if (!cmd) {
         return -1;
     }
-	int i;
-	for (i = 0; main_s[i] != NULL; i++){
-		if (strcmp(cmd,main_s[i]) == 0)
-			return i;
-	}
-	return -1;
+    int i;
+    for (i = 0; main_s[i] != NULL; i++){
+        if (strcmp(cmd,main_s[i]) == 0)
+            return i;
+    }
+    return -1;
 }
 
 int config_exists (char *conf) {

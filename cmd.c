@@ -107,20 +107,20 @@ void cmd_change_path (int argc, char * argv[]) {
 }
 
 int cmd_num (char *cmd) {
-	int i;
-	for (i = 0; cmd_s[i] != NULL; i++){
-		if (strcmp(cmd,cmd_s[i]) == 0)
-			return i;
-	}
-	return -1;
+    int i;
+    for (i = 0; cmd_s[i] != NULL; i++){
+        if (strcmp(cmd,cmd_s[i]) == 0)
+            return i;
+    }
+    return -1;
 }
 
 const char *cmd_name (char *cmd) {
-	int i = cmd_find (cmd);
-	if (i >= 0) 
-		return cmd_s[i];
+    int i = cmd_find (cmd);
+    if (i >= 0)
+        return cmd_s[i];
     // cannot return NULL as returned value can be evaluated directly
-	return "";
+    return "";
 }
 
 const char *dirm_name (char *cmd) {
@@ -151,11 +151,11 @@ char * cmd_play (int argc, char * argv[], int iter) {
         DB_playItem_t* find = cmd_get_item (NULL, argv[1], NULL, NULL);
         int num = 0;
         if (!find) {
-        	deadbeef->plt_deselect_all (plt);
-        	DB_playItem_t *item = deadbeef->pl_get_for_idx (atoi(argv[1]));
-        	deadbeef->pl_set_selected (item, 1);
-        	deadbeef->pl_item_unref (item);
-        	deadbeef->plt_unref (plt);
+            deadbeef->plt_deselect_all (plt);
+            DB_playItem_t *item = deadbeef->pl_get_for_idx (atoi(argv[1]));
+            deadbeef->pl_set_selected (item, 1);
+            deadbeef->pl_item_unref (item);
+            deadbeef->plt_unref (plt);
             num = atoi(argv[1]);
         }
         else {
@@ -191,25 +191,25 @@ char * cmd_play (int argc, char * argv[], int iter) {
 }
 
 char * cmd_play_pause (int argc, char * argv[], int iter) {
-	NO_TAB_COMPLETION
+    NO_TAB_COMPLETION
     if (argc != 1) {
-    	if (cmd_find(argv[0]) == cmd_num("resume"))
-        	printf ("%s: unpauses playback\n", cmd_name(argv[0]));
-    	else
-        	printf ("%s: pauses/unpauses playback\n", cmd_name(argv[0]));
+        if (cmd_find(argv[0]) == cmd_num("resume"))
+            printf ("%s: unpauses playback\n", cmd_name(argv[0]));
+        else
+            printf ("%s: pauses/unpauses playback\n", cmd_name(argv[0]));
         return NULL;
     }
     if (cmd_find(argv[0]) == cmd_num("resume")) {
-    	struct DB_output_s* output = deadbeef->get_output ();
-    	if (output->state() != OUTPUT_STATE_PAUSED)
-    		return NULL;
+        struct DB_output_s* output = deadbeef->get_output ();
+        if (output->state() != OUTPUT_STATE_PAUSED)
+            return NULL;
     }
     deadbeef->sendmessage (DB_EV_TOGGLE_PAUSE, 0, 0, 0);
     return NULL;
 }
 
 char * cmd_stop (int argc, char * argv[], int iter) {
-	NO_TAB_COMPLETION
+    NO_TAB_COMPLETION
     if (argc != 1) {
         printf ("%s: stops playback\n", cmd_name(argv[0]));
         return NULL;
@@ -219,8 +219,8 @@ char * cmd_stop (int argc, char * argv[], int iter) {
 }
 
 char * cmd_next (int argc, char * argv[], int iter) {
-	NO_TAB_COMPLETION
-	// TODO: take argument to go for example 2 tracks after
+    NO_TAB_COMPLETION
+    // TODO: take argument to go for example 2 tracks after
     if (argc != 1) {
         printf ("%s: play next track\n", cmd_name(argv[0]));
         return NULL;
@@ -230,8 +230,8 @@ char * cmd_next (int argc, char * argv[], int iter) {
 }
 
 char * cmd_prev (int argc, char * argv[], int iter) {
-	NO_TAB_COMPLETION
-	// TODO: take argument to go for example 2 tracks before
+    NO_TAB_COMPLETION
+    // TODO: take argument to go for example 2 tracks before
     if (argc != 1) {
         printf ("%s: play previous track\n", cmd_name(argv[0]));
         return NULL;
@@ -241,7 +241,7 @@ char * cmd_prev (int argc, char * argv[], int iter) {
 }
 
 char * cmd_seek (int argc, char * argv[], int iter) {
-	NO_TAB_COMPLETION
+    NO_TAB_COMPLETION
     if (argc != 2) {
         printf ("%s: seek track\n", cmd_name(argv[0]));
         printf ("\t1: seconds to seek from current position\n");
@@ -249,25 +249,25 @@ char * cmd_seek (int argc, char * argv[], int iter) {
     }
     DB_playItem_t* curr_track = deadbeef->streamer_get_playing_track ();
     if (!curr_track) {
-    	return NULL;
+        return NULL;
     }
     float item_length = deadbeef->pl_get_item_duration (curr_track) * 1000;
     deadbeef->pl_item_unref (curr_track);
     float pos = deadbeef->streamer_get_playpos () * 1000;
-	if (argv[1][0] == '+') {
-		pos += (atoi (argv[1]+1) * 1000);
-	}
-	if (argv[1][0] == '-') {
-		pos -= (atoi (argv[1]+1) * 1000);
-	}
-	else {
-		// assume it's a positive num
-		pos += (atoi (argv[1]) * 1000);
-	}
-	if (pos < 0.0f)
-		pos = 0.0;
-	if (pos > item_length)
-		deadbeef->sendmessage (DB_EV_NEXT, 0, 0, 0);
+    if (argv[1][0] == '+') {
+        pos += (atoi (argv[1]+1) * 1000);
+    }
+    if (argv[1][0] == '-') {
+        pos -= (atoi (argv[1]+1) * 1000);
+    }
+    else {
+        // assume it's a positive num
+        pos += (atoi (argv[1]) * 1000);
+    }
+    if (pos < 0.0f)
+        pos = 0.0;
+    if (pos > item_length)
+        deadbeef->sendmessage (DB_EV_NEXT, 0, 0, 0);
     deadbeef->sendmessage (DB_EV_SEEK, 0, pos, 0);
     return NULL;
 }
@@ -286,7 +286,7 @@ char * cmd_signal (int argc, char * argv[], int iter) {
     }
     if (argv[1][0] > 48 && argv[1][0] < 57) {
         // is probably a num
-       	// with p1
+        // with p1
         if (argc == 3)
             deadbeef->sendmessage (atoi(argv[0]), 0, atoi(argv[1]), 0);
         else
@@ -323,19 +323,19 @@ char * cmd_volume (int argc, char * argv[], int iter) {
         printf ("%.0f%% (%.2f dB)\n", deadbeef->volume_get_db() * 2 + 100 , deadbeef->volume_get_db());
     }
     else if (argc == 2) {
-       	int vol_calc = -1;
-    	if (argv[1][0] == '+') {
-    		vol_calc = deadbeef->volume_get_db() * 2 + 100;
-    		vol_calc += atoi (argv[1]+1);
-    	}
-    	if (argv[1][0] == '-') {
-   			vol_calc = deadbeef->volume_get_db() * 2 + 100;
-    		vol_calc -= atoi (argv[1]+1);
-    	}
-    	if (vol_calc != -1) {
-    		deadbeef->volume_set_db ((vol_calc/100.0 * 50) - 50);
-    		return NULL;
-    	}
+        int vol_calc = -1;
+        if (argv[1][0] == '+') {
+            vol_calc = deadbeef->volume_get_db() * 2 + 100;
+            vol_calc += atoi (argv[1]+1);
+        }
+        if (argv[1][0] == '-') {
+            vol_calc = deadbeef->volume_get_db() * 2 + 100;
+            vol_calc -= atoi (argv[1]+1);
+        }
+        if (vol_calc != -1) {
+            deadbeef->volume_set_db ((vol_calc/100.0 * 50) - 50);
+            return NULL;
+        }
         int pct;
         char *end;
         pct = strtol (argv[1], &end, 10);
@@ -373,12 +373,12 @@ char * cmd_help (int argc, char * argv[], int iter) {
         // argv[1] is command help
         int i = cmd_find (argv[1]);
         if (i == FIND_NOTFOUND)
-        	printf ("%s: command %s not found\n", cmd_name(argv[0]), argv[1]);
+            printf ("%s: command %s not found\n", cmd_name(argv[0]), argv[1]);
         else if (i == FIND_AMBIGUOUS)
-        	return NULL;
+            return NULL;
         else {
-        	char * empty[] = {argv[1], NULL};
-        	cmd_f[i] (-1, empty, -1);
+            char * empty[] = {argv[1], NULL};
+            cmd_f[i] (-1, empty, -1);
         }
     }
     return NULL;
@@ -391,8 +391,8 @@ char * cmd_quit (int argc, char * argv[], int iter) {
         return NULL;
     }
     // note for (long) future: check for background jobs
-	deadbeef->sendmessage (DB_EV_TERMINATE, 0, 0, 0);
-	ui_running = 0;
+    deadbeef->sendmessage (DB_EV_TERMINATE, 0, 0, 0);
+    ui_running = 0;
     return NULL;
 }
 
@@ -405,52 +405,52 @@ char * cmd_list (int argc, char * argv[], int iter) {
         return NULL;
     }
     if (argc == 1 || argc == 2) {
-    	ddb_playlist_t *plt;
-    	if (argc == 1) {
-    		plt = deadbeef->plt_get_curr();
+        ddb_playlist_t *plt;
+        if (argc == 1) {
+            plt = deadbeef->plt_get_curr();
         }
-    	else {
+        else {
             plt = cmd_get_playlist (argv[1]);
             if (!plt)
-    		  plt = deadbeef->plt_get_for_idx(atoi(argv[1]));
+              plt = deadbeef->plt_get_for_idx(atoi(argv[1]));
         }
-	    ddb_tf_context_t context;
-	    context._size = sizeof(ddb_tf_context_t);
-	    context.flags = 0;
-	    //context.it = nowplaying;
-	    context.plt = plt;
-	    context.idx = 0;
-	    context.id = 0;
-	    context.iter = PL_MAIN;
-	    context.update = 0;
-	    context.dimmed = 0;
-	    char * script = "%tracknumber%. %artist% - %title% /// %album%\n";
-	    char * code_script = deadbeef->tf_compile (script);
-    	DB_playItem_t *item = deadbeef->plt_get_first (plt, PL_MAIN);
-    	if (!item)
-    		return NULL;
-    	int i = 0;
-    	char buffer[256];
-    	do {
-    		int offset = sprintf (buffer, "%02d: ",i);
-    		context.it = item;
-    		deadbeef->tf_eval (&context, code_script, buffer+offset, 250);
-    		printf ("%s\n",buffer);
-    		DB_playItem_t *new = deadbeef->pl_get_next (item, PL_MAIN);
-    		deadbeef->pl_item_unref (item);
-    		if (new) {
-    			i++;
-    			item = new;
-    		}
-    		else {
-    			break;
-    		}
-    	}
-    	while (1);
-    	
-    	deadbeef->tf_free (code_script);
-    	if (plt)
-    		deadbeef->plt_unref (plt);
+        ddb_tf_context_t context;
+        context._size = sizeof(ddb_tf_context_t);
+        context.flags = 0;
+        //context.it = nowplaying;
+        context.plt = plt;
+        context.idx = 0;
+        context.id = 0;
+        context.iter = PL_MAIN;
+        context.update = 0;
+        context.dimmed = 0;
+        char * script = "%tracknumber%. %artist% - %title% /// %album%\n";
+        char * code_script = deadbeef->tf_compile (script);
+        DB_playItem_t *item = deadbeef->plt_get_first (plt, PL_MAIN);
+        if (!item)
+            return NULL;
+        int i = 0;
+        char buffer[256];
+        do {
+            int offset = sprintf (buffer, "%02d: ",i);
+            context.it = item;
+            deadbeef->tf_eval (&context, code_script, buffer+offset, 250);
+            printf ("%s\n",buffer);
+            DB_playItem_t *new = deadbeef->pl_get_next (item, PL_MAIN);
+            deadbeef->pl_item_unref (item);
+            if (new) {
+                i++;
+                item = new;
+            }
+            else {
+                break;
+            }
+        }
+        while (1);
+
+        deadbeef->tf_free (code_script);
+        if (plt)
+            deadbeef->plt_unref (plt);
     }
     return NULL;
 }
@@ -464,40 +464,40 @@ char * cmd_playlist (int argc, char * argv[], int iter) {
         return NULL;
     }
     else if (argc == 1) {
-    	DB_playItem_t* curr_track = deadbeef->streamer_get_playing_track ();
-    	if (curr_track) {
-    		ddb_playlist_t* playlist = deadbeef->pl_get_playlist (curr_track);
-    		deadbeef->plt_set_curr (playlist);
-    		deadbeef->plt_unref (playlist);
-    		deadbeef->pl_item_unref (curr_track);
-    		return NULL;
-    	}
-    	else {
-			ddb_playlist_t* playlist = deadbeef->plt_get_curr ();
-			char buffer[256];
-			deadbeef->plt_get_title (playlist, buffer, 256);
-			deadbeef->plt_unref (playlist);
-			printf ("Current playlist: %s\n",buffer);
-		}
-    	return NULL;
+        DB_playItem_t* curr_track = deadbeef->streamer_get_playing_track ();
+        if (curr_track) {
+            ddb_playlist_t* playlist = deadbeef->pl_get_playlist (curr_track);
+            deadbeef->plt_set_curr (playlist);
+            deadbeef->plt_unref (playlist);
+            deadbeef->pl_item_unref (curr_track);
+            return NULL;
+        }
+        else {
+            ddb_playlist_t* playlist = deadbeef->plt_get_curr ();
+            char buffer[256];
+            deadbeef->plt_get_title (playlist, buffer, 256);
+            deadbeef->plt_unref (playlist);
+            printf ("Current playlist: %s\n",buffer);
+        }
+        return NULL;
     }
     else if (argc == 2) {
         ddb_playlist_t* find = cmd_get_playlist (argv[1]);
         if (!find) {
-        	int num = atoi (argv[1]);
-        	if (argv[1][0] == '+') {
-        		num = deadbeef->plt_get_curr_idx ();
-        		num += atoi (argv[1]+1);
-        	}
-        	if (argv[1][0] == '-') {
-       			num = deadbeef->plt_get_curr_idx ();
-        		num -= atoi (argv[1]+1);
-        	}
-        	ddb_playlist_t *plt = deadbeef->plt_get_for_idx (num);
-        	if (plt) {
-        		deadbeef->plt_set_curr (plt);
-        		deadbeef->plt_unref (plt);
-        	}
+            int num = atoi (argv[1]);
+            if (argv[1][0] == '+') {
+                num = deadbeef->plt_get_curr_idx ();
+                num += atoi (argv[1]+1);
+            }
+            if (argv[1][0] == '-') {
+                num = deadbeef->plt_get_curr_idx ();
+                num -= atoi (argv[1]+1);
+            }
+            ddb_playlist_t *plt = deadbeef->plt_get_for_idx (num);
+            if (plt) {
+                deadbeef->plt_set_curr (plt);
+                deadbeef->plt_unref (plt);
+            }
         }
         else {
             deadbeef->plt_set_curr (find);
@@ -514,23 +514,23 @@ char * cmd_playlists (int argc, char * argv[], int iter) {
         return NULL;
     }
     else if (argc == 1) {
-    	ddb_playlist_t* playlist = deadbeef->plt_get_for_idx (0);
-    	int i = 0;
-    	char buffer[256];
-    	do {
-    		int offset = sprintf (buffer, "%02d: ",i);
-    		deadbeef->plt_get_title (playlist, buffer+offset, 256-offset);
-    		printf ("%s\n",buffer);
-    		ddb_playlist_t* new = deadbeef->plt_get_for_idx (++i);
-    		deadbeef->plt_unref (playlist);
-    		if (new) {
-    			playlist = new;
-    		}
-    		else {
-    			break;
-    		}
-    	}
-    	while (1);
+        ddb_playlist_t* playlist = deadbeef->plt_get_for_idx (0);
+        int i = 0;
+        char buffer[256];
+        do {
+            int offset = sprintf (buffer, "%02d: ",i);
+            deadbeef->plt_get_title (playlist, buffer+offset, 256-offset);
+            printf ("%s\n",buffer);
+            ddb_playlist_t* new = deadbeef->plt_get_for_idx (++i);
+            deadbeef->plt_unref (playlist);
+            if (new) {
+                playlist = new;
+            }
+            else {
+                break;
+            }
+        }
+        while (1);
     }
     return NULL;
 }
@@ -542,127 +542,127 @@ char * cmd_info (int argc, char * argv[], int iter) {
         return NULL;
     }
     if (argc == 1) {
-    	struct DB_output_s* output = deadbeef->get_output ();
-    	int state = output->state ();
-    	const char * state_s;
-    	switch (state) {
-    		case OUTPUT_STATE_STOPPED:
-    			state_s = KRED "Stopped" KNRM;
-    			break;
-       		case OUTPUT_STATE_PAUSED:
-    			state_s = KYEL "Paused" KNRM;
-    			break;
-    		case OUTPUT_STATE_PLAYING:
-    		default:
-    			state_s = KGRN "Playing" KNRM;
-    			break;
-    	}
-    	printf ("Playback state: %s\n", state_s);
+        struct DB_output_s* output = deadbeef->get_output ();
+        int state = output->state ();
+        const char * state_s;
+        switch (state) {
+            case OUTPUT_STATE_STOPPED:
+                state_s = KRED "Stopped" KNRM;
+                break;
+            case OUTPUT_STATE_PAUSED:
+                state_s = KYEL "Paused" KNRM;
+                break;
+            case OUTPUT_STATE_PLAYING:
+            default:
+                state_s = KGRN "Playing" KNRM;
+                break;
+        }
+        printf ("Playback state: %s\n", state_s);
 
-    	DB_playItem_t* curr_track = deadbeef->streamer_get_playing_track ();
-    	ddb_playlist_t *plt;
-    	if (curr_track)
-    		plt = deadbeef->pl_get_playlist (curr_track);
-    	else
-    		plt = deadbeef->plt_get_curr ();
+        DB_playItem_t* curr_track = deadbeef->streamer_get_playing_track ();
+        ddb_playlist_t *plt;
+        if (curr_track)
+            plt = deadbeef->pl_get_playlist (curr_track);
+        else
+            plt = deadbeef->plt_get_curr ();
 
-	    ddb_tf_context_t context;
-	    context._size = sizeof(ddb_tf_context_t);
-	    context.flags = 0;
-	    context.it = curr_track;
-	    context.plt = plt;
-	    context.idx = 0;
-	    context.id = 0;
-	    context.iter = PL_MAIN;
-	    context.update = 0;
-	    context.dimmed = 0;
+        ddb_tf_context_t context;
+        context._size = sizeof(ddb_tf_context_t);
+        context.flags = 0;
+        context.it = curr_track;
+        context.plt = plt;
+        context.idx = 0;
+        context.id = 0;
+        context.iter = PL_MAIN;
+        context.update = 0;
+        context.dimmed = 0;
 
-	    if (state != OUTPUT_STATE_STOPPED) {
-			char * script = "%artist% - %title%\n";
-		    char * code_script = deadbeef->tf_compile (script);
-	    	char buffer[256];
-	 
-	    	deadbeef->tf_eval (&context, code_script, buffer, 256);
-	    	printf ("%s\n",buffer);
+        if (state != OUTPUT_STATE_STOPPED) {
+            char * script = "%artist% - %title%\n";
+            char * code_script = deadbeef->tf_compile (script);
+            char buffer[256];
 
-	    	float item_length = deadbeef->pl_get_item_duration (curr_track);
-	    	float playback_pos = deadbeef->streamer_get_playpos ();
-	    	float percent = playback_pos/item_length;
-	    	#define PROGRESSBAR_LEN 20
-	    	int progress = (int) (round(percent * PROGRESSBAR_LEN));
-	    	char bar[PROGRESSBAR_LEN+1];
-	    	bar[PROGRESSBAR_LEN] = 0;
-	    	memset (bar, '#', progress);
-	    	memset (bar+progress, '-', PROGRESSBAR_LEN-progress);
-	    	printf ("|%s|\n", bar);
-	    	char time[16];
-	    	char time2[16];
-	    	deadbeef->pl_format_time (playback_pos, time, 16);
-	    	deadbeef->pl_format_time (item_length-playback_pos, time2, 16);
-	    	// hard-coded value: 17
-	    	printf("%s %17s\n", time, time2);
-	    }
+            deadbeef->tf_eval (&context, code_script, buffer, 256);
+            printf ("%s\n",buffer);
 
-	    printf ("\n");
-	    printf ("No  Track  Artist  Title\t\tAlbum\n");
+            float item_length = deadbeef->pl_get_item_duration (curr_track);
+            float playback_pos = deadbeef->streamer_get_playpos ();
+            float percent = playback_pos/item_length;
+            #define PROGRESSBAR_LEN 20
+            int progress = (int) (round(percent * PROGRESSBAR_LEN));
+            char bar[PROGRESSBAR_LEN+1];
+            bar[PROGRESSBAR_LEN] = 0;
+            memset (bar, '#', progress);
+            memset (bar+progress, '-', PROGRESSBAR_LEN-progress);
+            printf ("|%s|\n", bar);
+            char time[16];
+            char time2[16];
+            deadbeef->pl_format_time (playback_pos, time, 16);
+            deadbeef->pl_format_time (item_length-playback_pos, time2, 16);
+            // hard-coded value: 17
+            printf("%s %17s\n", time, time2);
+        }
 
-	    char * script = "%tracknumber%.  %artist% - %title% /// %album%\n";
-	    char * code_script = deadbeef->tf_compile (script);
+        printf ("\n");
+        printf ("No  Track  Artist  Title\t\tAlbum\n");
 
-	    int num = deadbeef->plt_get_item_idx (plt, curr_track, PL_MAIN);
-	    // display 4 tracks before and after
-	    int num_first = num - 4;
-	    if (num_first < 0)
-	    	num_first = 0;
-    	DB_playItem_t *item = deadbeef->plt_get_item_for_idx (plt, num_first, PL_MAIN);
-    	if (!item) {
-    		// empty or failed
-    		printf ("Empty.\n");
-    		return NULL;
-    	}
-    	int i = num_first;
-    	int printed_count = 0;
-    	char buffer[256];
-    	do {
-    		int offset = 0;
-    		if (i == num) {
-    			if (state == OUTPUT_STATE_PLAYING)
-    				offset = sprintf (buffer, KBLD SYMBOL_PLAY " : ");
-    			else if (state == OUTPUT_STATE_PAUSED) 
-    			    offset = sprintf (buffer, KBLD SYMBOL_PAUSED " : ");
-    			else if (state == OUTPUT_STATE_STOPPED)
-    				offset = sprintf (buffer, KBLD SYMBOL_STOPPED " : "); 
-    		}
-    		else {
-    			offset = sprintf (buffer, "%02d: ",i);
-    		}
-    		context.it = item;
-    		deadbeef->tf_eval (&context, code_script, buffer+offset, 250);
-    		printf ("%s\n" KNRM,buffer);
-    		printed_count++;
+        char * script = "%tracknumber%.  %artist% - %title% /// %album%\n";
+        char * code_script = deadbeef->tf_compile (script);
 
-    		deadbeef->pl_item_unref (item);
-    		if (printed_count >= 9) {
-    			break;
-    		}
-    		DB_playItem_t *new = deadbeef->pl_get_next (item, PL_MAIN);
-    		
-    		if (new) {
-    			i++;
-    			item = new;
-    		}
-    		else {
-    			printf ("================\n");
-    			break;
-    		}
-    	}
-    	while (1);
-    	
-    	deadbeef->tf_free (code_script);
-    	if (plt)
-    		deadbeef->plt_unref (plt);
-    	if (curr_track)
-    		deadbeef->pl_item_unref (curr_track);
+        int num = deadbeef->plt_get_item_idx (plt, curr_track, PL_MAIN);
+        // display 4 tracks before and after
+        int num_first = num - 4;
+        if (num_first < 0)
+            num_first = 0;
+        DB_playItem_t *item = deadbeef->plt_get_item_for_idx (plt, num_first, PL_MAIN);
+        if (!item) {
+            // empty or failed
+            printf ("Empty.\n");
+            return NULL;
+        }
+        int i = num_first;
+        int printed_count = 0;
+        char buffer[256];
+        do {
+            int offset = 0;
+            if (i == num) {
+                if (state == OUTPUT_STATE_PLAYING)
+                    offset = sprintf (buffer, KBLD SYMBOL_PLAY " : ");
+                else if (state == OUTPUT_STATE_PAUSED)
+                    offset = sprintf (buffer, KBLD SYMBOL_PAUSED " : ");
+                else if (state == OUTPUT_STATE_STOPPED)
+                    offset = sprintf (buffer, KBLD SYMBOL_STOPPED " : ");
+            }
+            else {
+                offset = sprintf (buffer, "%02d: ",i);
+            }
+            context.it = item;
+            deadbeef->tf_eval (&context, code_script, buffer+offset, 250);
+            printf ("%s\n" KNRM,buffer);
+            printed_count++;
+
+            deadbeef->pl_item_unref (item);
+            if (printed_count >= 9) {
+                break;
+            }
+            DB_playItem_t *new = deadbeef->pl_get_next (item, PL_MAIN);
+
+            if (new) {
+                i++;
+                item = new;
+            }
+            else {
+                printf ("================\n");
+                break;
+            }
+        }
+        while (1);
+
+        deadbeef->tf_free (code_script);
+        if (plt)
+            deadbeef->plt_unref (plt);
+        if (curr_track)
+            deadbeef->pl_item_unref (curr_track);
     }
     return NULL;
 }
@@ -858,32 +858,32 @@ char ** cmd_completion (const char *text, int start, int end) {
 }
 
 int cmd_find (char * cmd) {
-	int i;
-	int exact_cmd = -1;
-	int possible_cmds[10];
-	int poss_p = 0;
-	memset (possible_cmds, -1, sizeof (int) * 10);
+    int i;
+    int exact_cmd = -1;
+    int possible_cmds[10];
+    int poss_p = 0;
+    memset (possible_cmds, -1, sizeof (int) * 10);
     possible_cmds[9] = 0;
-	// exceptions
-	char * links_s[] = {"p", "pl", "pls", "pp", "ls", NULL};
-	char * links_n[] = {"play", "playlist", "playlists", "pause", "list", NULL};
+    // exceptions
+    char * links_s[] = {"p", "pl", "pls", "pp", "ls", NULL};
+    char * links_n[] = {"play", "playlist", "playlists", "pause", "list", NULL};
 
-	// find exact name or possible names;
+    // find exact name or possible names;
     for (i = 0; cmd_s[i] != 0; i++) {
         if (strcmp(cmd, cmd_s[i]) == 0) {
-        	exact_cmd = i;
-        	break;
+            exact_cmd = i;
+            break;
         }
         if (strncmp(cmd, cmd_s[i], strlen(cmd)) == 0) {
-        	possible_cmds[poss_p] = i;
-        	poss_p++;
+            possible_cmds[poss_p] = i;
+            poss_p++;
         }
         int links_i;
         for (links_i = 0; links_s[links_i] != NULL; links_i++) {
-        	if (strcmp(cmd, links_s[links_i]) == 0) {
-        		exact_cmd = cmd_num(links_n[links_i]);
-        		break;
-        	}
+            if (strcmp(cmd, links_s[links_i]) == 0) {
+                exact_cmd = cmd_num(links_n[links_i]);
+                break;
+            }
         }
         // dir navigation
         if (cmd_path_argv[0]) {
@@ -917,21 +917,21 @@ int cmd_find (char * cmd) {
             }
         }
         if (exact_cmd != -1) {
-        	break;
+            break;
         }
     }
     if (exact_cmd != -1) {
-    	return exact_cmd;
+        return exact_cmd;
     }
     else if (possible_cmds[0] == -1) {
-    	return FIND_NOTFOUND;
+        return FIND_NOTFOUND;
     }
     else if (possible_cmds[1] == -1) {
-    	return possible_cmds[0];
+        return possible_cmds[0];
     }
     else {
         // use cmd_ambiguous_print to show available commands
-    	return FIND_AMBIGUOUS;
+        return FIND_AMBIGUOUS;
     }
 }
 
@@ -975,7 +975,7 @@ int cmd (char * buffer) {
 
     int argc = argv_count (argv);
     if (argc == 0) {
-    	return -1;
+        return -1;
     }
 
     int find_ret = cmd_find (argv[0]);
@@ -989,15 +989,15 @@ int cmd (char * buffer) {
         out_ret = 0;
     }
     else if (find_ret == FIND_NOTFOUND) {
-    	out_ret = -1;
+        out_ret = -1;
     }
     else if (find_ret == FIND_AMBIGUOUS) {
         cmd_ambiguous_print (argv[0]);
-    	out_ret = -2;
+        out_ret = -2;
     }
     else {
-    	// find_ret is command num
-    	char * cmd_ret = cmd_f[find_ret] (argc, argv, -1);
+        // find_ret is command num
+        char * cmd_ret = cmd_f[find_ret] (argc, argv, -1);
         if (cmd_ret) {
             if (strcmp (cmd_ret, CMD_DIRECTORY) == 0) {
                 //

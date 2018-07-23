@@ -25,7 +25,7 @@
 // Type definitions (needed before everything else)
 
 typedef struct property {
-	// Full name
+    // Full name
     char * name;
     // type, one of enum property_type
     int type;
@@ -60,49 +60,49 @@ typedef struct property {
 
 // end tab-completion processing
 #define NO_TAB_COMPLETION \
-	if (iter != -1) {return NULL;};
+    if (iter != -1) {return NULL;};
 
 // tab-complete argument number X with string table Y (char **, table with entries ended with NULL, escaping will be done internally) 
 #define TAB_COMPLETION_TABLE(X,Y) \
-	if (argc == (1+X) && iter != -1) {return cmd_tab_complete_table(Y, argv, iter);}
+    if (argc == (1+X) && iter != -1) {return cmd_tab_complete_table(Y, argv, iter);}
 
 // tab-complete argument number X with playlists
 #define TAB_COMPLETION_PLAYLIST(X) \
-	if (argc == (1+X) && iter != -1) {return cmd_tab_complete_playlists(argv, iter);}
+    if (argc == (1+X) && iter != -1) {return cmd_tab_complete_playlists(argv, iter);}
 
 // tab-complete argument number X with artists in current playlist
 #define TAB_COMPLETION_ARTIST_CURR(X) \
-	if (argc == (1+X) && iter != -1) {return cmd_tab_complete_meta("artist", argv, iter);}
+    if (argc == (1+X) && iter != -1) {return cmd_tab_complete_meta("artist", argv, iter);}
 
 // tab-complete argument number X with titles in current playlist
 #define TAB_COMPLETION_TITLE_CURR(X) \
-	if (argc == (1+X) && iter != -1) {return cmd_tab_complete_meta("title", argv, iter);}
+    if (argc == (1+X) && iter != -1) {return cmd_tab_complete_meta("title", argv, iter);}
 
 // tab-complete argument number X with albums in current playlist
 #define TAB_COMPLETION_ALBUM_CURR(X) \
-	if (argc == (1+X) && iter != -1) {return cmd_tab_complete_meta("album", argv, iter);}
+    if (argc == (1+X) && iter != -1) {return cmd_tab_complete_meta("album", argv, iter);}
 
 // tab-complete arguments X Y Z with artist/title/playlist, complementary, automatic argument detection, each can be 0
 #define TAB_COMPLETION_ATA(X, Y, Z) \
-	if (iter != -1) { \
-		char *artist = 0, *title = 0, *album = 0; \
-		if (argc-1 >=X && X > 0) { artist = argv[X];}; \
-		if (argc-1 >=Y && Y > 0) { title = argv[Y];}; \
-		if (argc-1 >=Z && Z > 0) { album = argv[Z];}; \
-		return cmd_tab_complete_ata(artist, title, album, argv, iter); \
-	};
+    if (iter != -1) { \
+        char *artist = 0, *title = 0, *album = 0; \
+        if (argc-1 >=X && X > 0) { artist = argv[X];}; \
+        if (argc-1 >=Y && Y > 0) { title = argv[Y];}; \
+        if (argc-1 >=Z && Z > 0) { album = argv[Z];}; \
+        return cmd_tab_complete_ata(artist, title, album, argv, iter); \
+    };
 
 // tab-complete argument number X with Y properties
 #define TAB_COMPLETION_PROPERTIES(X,Y) \
-	if (argc == (1+X) && iter != -1) {return cmd_tab_complete_properties(Y, argv, iter);}
+    if (argc == (1+X) && iter != -1) {return cmd_tab_complete_properties(Y, argv, iter);}
 
 // tab-complete argument number X with options from Z properties (if possible) for key Y
 #define TAB_COMPLETION_PROPERTIES_OPTION(X,Y,Z) \
-	if (argc == (1+X) && argc >= (1+Y) && iter != -1) { \
-		property_t *prop = property_get (Z, argv[Y]); \
-		if (prop && prop->val_possible) {return cmd_tab_complete_table((const char **)prop->val_possible, argv, iter);} \
-		return NULL; \
-	}
+    if (argc == (1+X) && argc >= (1+Y) && iter != -1) { \
+        property_t *prop = property_get (Z, argv[Y]); \
+        if (prop && prop->val_possible) {return cmd_tab_complete_table((const char **)prop->val_possible, argv, iter);} \
+        return NULL; \
+    }
 
 // end tab-completion processing
 #define TAB_COMPLETION_END NO_TAB_COMPLETION

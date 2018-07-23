@@ -41,374 +41,374 @@ char ** temp_table = 0;
 
 // tab-complete after table
 char * cmd_tab_complete_table (const char **table, char **argv, int iter) {
-	int argc;
-	for (argc = 0; argv[argc] != NULL; argc++);
-	int quotesc = 0;
-	{
-		int i;
-		for (i = 0; argv[argc-1][i]; i++) {
-			if (argv[argc-1][i] == '\"')
-				quotesc++;
-		}
-	}
-	if (quotesc >= 2) {
-		if (iter == 0) {
-			return strdup ("");
-		}
-		else
-			return NULL;
-	}
-	char *to_extend = strdup_unescaped(argv[argc-1]);// malloc (16 + strlen(argv[i-1]));
+    int argc;
+    for (argc = 0; argv[argc] != NULL; argc++);
+    int quotesc = 0;
+    {
+        int i;
+        for (i = 0; argv[argc-1][i]; i++) {
+            if (argv[argc-1][i] == '\"')
+                quotesc++;
+        }
+    }
+    if (quotesc >= 2) {
+        if (iter == 0) {
+            return strdup ("");
+        }
+        else
+            return NULL;
+    }
+    char *to_extend = strdup_unescaped(argv[argc-1]);// malloc (16 + strlen(argv[i-1]));
 
-	int to_extend_spaces = 0;
-	int i;
-	for (i = 0; to_extend[i]; i++) {
-		if (to_extend[i] == ' ')
-			to_extend_spaces++;
-	}
-	// Try to detect if there are names which include space, if that's the case put every option in quotes
-	// sometimes it's useful, sometimes not
-	int enquoteme = 0;
-	{
-		if (strlen(to_extend) > 0) {
-			for (i = 0; table[i] != NULL; i++) {
-				if (strncmp (table[i], to_extend, strlen(to_extend)) == 0 && has_spaces(table[i])) {
-					enquoteme = 1;
-					break;
-				}
-			}
-		}
-	}
-	int j = 0;	
-	for (i = 0; table[i] != NULL; i++) {
-		if (strncmp (table[i], to_extend, strlen(to_extend)) == 0) {
-			if (iter == j) {
-				free (to_extend);
-				char *ret = 0;
-				if (enquoteme)
-					ret = strdup_quoted (table[i]);
-				else
-					ret = strdup_escaped (table[i]);
-				return ret;
-			}
-			else {
-				j++;
-			}
-		}
-	}
-	free (to_extend);
-	return NULL;
+    int to_extend_spaces = 0;
+    int i;
+    for (i = 0; to_extend[i]; i++) {
+        if (to_extend[i] == ' ')
+            to_extend_spaces++;
+    }
+    // Try to detect if there are names which include space, if that's the case put every option in quotes
+    // sometimes it's useful, sometimes not
+    int enquoteme = 0;
+    {
+        if (strlen(to_extend) > 0) {
+            for (i = 0; table[i] != NULL; i++) {
+                if (strncmp (table[i], to_extend, strlen(to_extend)) == 0 && has_spaces(table[i])) {
+                    enquoteme = 1;
+                    break;
+                }
+            }
+        }
+    }
+    int j = 0;
+    for (i = 0; table[i] != NULL; i++) {
+        if (strncmp (table[i], to_extend, strlen(to_extend)) == 0) {
+            if (iter == j) {
+                free (to_extend);
+                char *ret = 0;
+                if (enquoteme)
+                    ret = strdup_quoted (table[i]);
+                else
+                    ret = strdup_escaped (table[i]);
+                return ret;
+            }
+            else {
+                j++;
+            }
+        }
+    }
+    free (to_extend);
+    return NULL;
 }
 
 // tab-complete playlists
 char * cmd_tab_complete_playlists (char **argv, int iter) {
-	if (iter == 0) {
-		int count = deadbeef->plt_get_count ();
-		temp_table = malloc ((count+1) * sizeof(char *));
-		int i;
-		ddb_playlist_t *plt;
-		char buffer[256];
-		for (i = 0; 1; i++) {
-			plt = deadbeef->plt_get_for_idx (i);
-			if (!plt) {
-				break;
-			}
-			deadbeef->plt_get_title (plt, buffer, 256);
-			deadbeef->plt_unref (plt);
-			temp_table[i] = strdup (buffer);
-		}
-		temp_table[i] = NULL;
-	}
-	// artist table generated;
-	char *ret = cmd_tab_complete_table ((const char **)temp_table, argv, iter);
-	if (!ret) {
-		int i;
-		for (i = 0; temp_table[i]; i++) {
-			free (temp_table[i]);
-		}
-		free (temp_table);
-		temp_table = 0;
-	}
-	return ret;
+    if (iter == 0) {
+        int count = deadbeef->plt_get_count ();
+        temp_table = malloc ((count+1) * sizeof(char *));
+        int i;
+        ddb_playlist_t *plt;
+        char buffer[256];
+        for (i = 0; 1; i++) {
+            plt = deadbeef->plt_get_for_idx (i);
+            if (!plt) {
+                break;
+            }
+            deadbeef->plt_get_title (plt, buffer, 256);
+            deadbeef->plt_unref (plt);
+            temp_table[i] = strdup (buffer);
+        }
+        temp_table[i] = NULL;
+    }
+    // artist table generated;
+    char *ret = cmd_tab_complete_table ((const char **)temp_table, argv, iter);
+    if (!ret) {
+        int i;
+        for (i = 0; temp_table[i]; i++) {
+            free (temp_table[i]);
+        }
+        free (temp_table);
+        temp_table = 0;
+    }
+    return ret;
 }
 
 // tab completion after ATA (artist/title/album)
 char * cmd_tab_complete_ata (char * artist_o, char * title_o, char * album_o, char ** argv, int iter) {
-	if (iter == 0) {
-		ddb_playlist_t *plt = deadbeef->plt_get_curr();
-		if (!plt) {
-			return NULL;
-		}
-		int it_count = deadbeef->plt_get_item_count (plt, PL_MAIN);
-		if (!it_count) {
-			return NULL;
-		}
-		// find what we are looking for
-		int argc;
-		for (argc = 0; argv[argc]; argc++);
-		char *looking_for = 0;
-		// one of X_o should have same adress as argv[argc-1]
-		if (artist_o == argv[argc-1]) {
-			looking_for = "artist";
-		}
-		else if (title_o == argv[argc-1]) {
-			looking_for = "title";
-		}
-		else if (album_o == argv[argc-1]) {
-			looking_for = "album";
-		}
-		else {
-			return NULL;
-		}
-		temp_table = malloc ((it_count+1) * sizeof(char *));
-		int i;
-		int j = 0;
-		char * artist = 0; 
-		char * title = 0; 
-		char * album = 0; 
-		if (artist_o && strcmp (artist_o, "*"))
-			artist = strdup_unescaped (artist_o);
-		if (title_o && strcmp (title_o, "*"))
-			title = strdup_unescaped (title_o);
-		if (album_o && strcmp (album_o, "*"))
-			album = strdup_unescaped (album_o);
-		// search if it already exists
-		int required = 0;
-		artist ? required++ : 0;
-		title ? required++ : 0;
-		album ? required++ : 0;
-		required--;
+    if (iter == 0) {
+        ddb_playlist_t *plt = deadbeef->plt_get_curr();
+        if (!plt) {
+            return NULL;
+        }
+        int it_count = deadbeef->plt_get_item_count (plt, PL_MAIN);
+        if (!it_count) {
+            return NULL;
+        }
+        // find what we are looking for
+        int argc;
+        for (argc = 0; argv[argc]; argc++);
+        char *looking_for = 0;
+        // one of X_o should have same adress as argv[argc-1]
+        if (artist_o == argv[argc-1]) {
+            looking_for = "artist";
+        }
+        else if (title_o == argv[argc-1]) {
+            looking_for = "title";
+        }
+        else if (album_o == argv[argc-1]) {
+            looking_for = "album";
+        }
+        else {
+            return NULL;
+        }
+        temp_table = malloc ((it_count+1) * sizeof(char *));
+        int i;
+        int j = 0;
+        char * artist = 0;
+        char * title = 0;
+        char * album = 0;
+        if (artist_o && strcmp (artist_o, "*"))
+            artist = strdup_unescaped (artist_o);
+        if (title_o && strcmp (title_o, "*"))
+            title = strdup_unescaped (title_o);
+        if (album_o && strcmp (album_o, "*"))
+            album = strdup_unescaped (album_o);
+        // search if it already exists
+        int required = 0;
+        artist ? required++ : 0;
+        title ? required++ : 0;
+        album ? required++ : 0;
+        required--;
 
-		DB_metaInfo_t* meta;
-		DB_playItem_t *item;
-		for (i = 0; 1; i++) {
-			item = deadbeef->pl_get_for_idx (i);
-			if (!item) {
-				break;
-			}
-			int matches = 0;
-			// 
-			if (strcmp (looking_for, "artist")) {
-				meta = deadbeef->pl_meta_for_key (item, "artist");
-				if (artist && meta) {
-					if (strcmp (artist,meta->value) == 0) {
-						matches++;
-					}
-				}
+        DB_metaInfo_t* meta;
+        DB_playItem_t *item;
+        for (i = 0; 1; i++) {
+            item = deadbeef->pl_get_for_idx (i);
+            if (!item) {
+                break;
+            }
+            int matches = 0;
+            //
+            if (strcmp (looking_for, "artist")) {
+                meta = deadbeef->pl_meta_for_key (item, "artist");
+                if (artist && meta) {
+                    if (strcmp (artist,meta->value) == 0) {
+                        matches++;
+                    }
+                }
 
-			}
-			if (strcmp (looking_for, "title")) {
-				meta = deadbeef->pl_meta_for_key (item, "title");
-				if (title && meta) {
-					if (strcmp (title,meta->value) == 0) {
-						matches++;
-					}
-				}
+            }
+            if (strcmp (looking_for, "title")) {
+                meta = deadbeef->pl_meta_for_key (item, "title");
+                if (title && meta) {
+                    if (strcmp (title,meta->value) == 0) {
+                        matches++;
+                    }
+                }
 
-			}
-			if (strcmp (looking_for, "album")) {
-				meta = deadbeef->pl_meta_for_key (item, "album");
-				if (album && meta) {
-					if (strcmp (album,meta->value) == 0) {
-						matches++;
-					}
-				}
+            }
+            if (strcmp (looking_for, "album")) {
+                meta = deadbeef->pl_meta_for_key (item, "album");
+                if (album && meta) {
+                    if (strcmp (album,meta->value) == 0) {
+                        matches++;
+                    }
+                }
 
-			}
-			meta = deadbeef->pl_meta_for_key (item, looking_for);
-			if (matches >= required && meta) {
-				// search if it already exists
-				int found = 0;
-				{
-					int h;
-					for (h = 0; h < j; h++) {
-						if (strcmp (temp_table[h], meta->value) == 0) {
-							found = 1;
-							break;
-						}
-					}
-				}
-				if (!found) {
-					temp_table[j] = strdup (meta->value);
-					j++;
-				}
-			}
-			deadbeef->pl_item_unref (item);
-		}
-		temp_table[j] = NULL;
-		deadbeef->plt_unref (plt);
-		// realloc back
-		if (j+1 < it_count)
-			temp_table = realloc (temp_table, (j+1) * sizeof (char *));
-	}
-	// artist table generated;
-	char *ret = cmd_tab_complete_table ((const char **)temp_table, argv, iter);
-	if (!ret) {
-		int i;
-		for (i = 0; temp_table[i]; i++) {
-			free (temp_table[i]);
-		}
-		free (temp_table);
-		temp_table = 0;
-	}
-	return ret;
+            }
+            meta = deadbeef->pl_meta_for_key (item, looking_for);
+            if (matches >= required && meta) {
+                // search if it already exists
+                int found = 0;
+                {
+                    int h;
+                    for (h = 0; h < j; h++) {
+                        if (strcmp (temp_table[h], meta->value) == 0) {
+                            found = 1;
+                            break;
+                        }
+                    }
+                }
+                if (!found) {
+                    temp_table[j] = strdup (meta->value);
+                    j++;
+                }
+            }
+            deadbeef->pl_item_unref (item);
+        }
+        temp_table[j] = NULL;
+        deadbeef->plt_unref (plt);
+        // realloc back
+        if (j+1 < it_count)
+            temp_table = realloc (temp_table, (j+1) * sizeof (char *));
+    }
+    // artist table generated;
+    char *ret = cmd_tab_complete_table ((const char **)temp_table, argv, iter);
+    if (!ret) {
+        int i;
+        for (i = 0; temp_table[i]; i++) {
+            free (temp_table[i]);
+        }
+        free (temp_table);
+        temp_table = 0;
+    }
+    return ret;
 }
 
 // tab completion after metadata
 char * cmd_tab_complete_meta (char * meta_s, char **argv, int iter) {
-	if (iter == 0) {
-		ddb_playlist_t *plt = deadbeef->plt_get_curr();
-		if (!plt) {
-			return NULL;
-		}
-		int it_count = deadbeef->plt_get_item_count (plt, PL_MAIN);
-		if (!it_count) {
-			return NULL;
-		}
-		temp_table = malloc ((it_count+1) * sizeof(char *));
-		int i;
-		int j = 0;
-		DB_metaInfo_t* meta;
-		DB_playItem_t *item;
-		for (i = 0; 1; i++) {
-			item = deadbeef->pl_get_for_idx (i);
-			if (!item) {
-				break;
-			}
-			meta = deadbeef->pl_meta_for_key (item, meta_s);
-			if (!meta) {
-				deadbeef->pl_item_unref (item);
-				continue;
-			}
-			// search if it already exists
-			int found = 0;
-			{
-				int h;
-				for (h = 0; h < j; h++) {
-					if (strcmp (temp_table[h], meta->value) == 0) {
-						found = 1;
-						break;
-					}
-				}
-			}
-			if (!found) {
-				temp_table[j] = strdup (meta->value);
-				j++;
-			}
-			deadbeef->pl_item_unref (item);
-		}
-		temp_table[j] = NULL;
-		deadbeef->plt_unref (plt);
-		// realloc back
-		if (i < it_count)
-			temp_table = realloc (temp_table, (i+1) * sizeof (char *));
-	}
-	// artist table generated;
-	char *ret = cmd_tab_complete_table ((const char **)temp_table, argv, iter);
-	if (!ret) {
-		int i;
-		for (i = 0; temp_table[i]; i++) {
-			free (temp_table[i]);
-		}
-		free (temp_table);
-		temp_table = 0;
-	}
-	return ret;
+    if (iter == 0) {
+        ddb_playlist_t *plt = deadbeef->plt_get_curr();
+        if (!plt) {
+            return NULL;
+        }
+        int it_count = deadbeef->plt_get_item_count (plt, PL_MAIN);
+        if (!it_count) {
+            return NULL;
+        }
+        temp_table = malloc ((it_count+1) * sizeof(char *));
+        int i;
+        int j = 0;
+        DB_metaInfo_t* meta;
+        DB_playItem_t *item;
+        for (i = 0; 1; i++) {
+            item = deadbeef->pl_get_for_idx (i);
+            if (!item) {
+                break;
+            }
+            meta = deadbeef->pl_meta_for_key (item, meta_s);
+            if (!meta) {
+                deadbeef->pl_item_unref (item);
+                continue;
+            }
+            // search if it already exists
+            int found = 0;
+            {
+                int h;
+                for (h = 0; h < j; h++) {
+                    if (strcmp (temp_table[h], meta->value) == 0) {
+                        found = 1;
+                        break;
+                    }
+                }
+            }
+            if (!found) {
+                temp_table[j] = strdup (meta->value);
+                j++;
+            }
+            deadbeef->pl_item_unref (item);
+        }
+        temp_table[j] = NULL;
+        deadbeef->plt_unref (plt);
+        // realloc back
+        if (i < it_count)
+            temp_table = realloc (temp_table, (i+1) * sizeof (char *));
+    }
+    // artist table generated;
+    char *ret = cmd_tab_complete_table ((const char **)temp_table, argv, iter);
+    if (!ret) {
+        int i;
+        for (i = 0; temp_table[i]; i++) {
+            free (temp_table[i]);
+        }
+        free (temp_table);
+        temp_table = 0;
+    }
+    return ret;
 }
 
 // tab-complete after properties
 char * cmd_tab_complete_properties (struct property **table, char **argv, int iter) {
-	int i;
-	const char * strings[32];
-	for (i = 0; table[i]; i++) {
-		if (i >= 32) {
-			break;
-		}
-		strings[i] = table[i]->key;
-	}
-	strings[i] = NULL;
-	return cmd_tab_complete_table (strings, argv, iter);
+    int i;
+    const char * strings[32];
+    for (i = 0; table[i]; i++) {
+        if (i >= 32) {
+            break;
+        }
+        strings[i] = table[i]->key;
+    }
+    strings[i] = NULL;
+    return cmd_tab_complete_table (strings, argv, iter);
 }
 
 // get item based on data (artist/title/album and playlist)
 DB_playItem_t* cmd_get_item (ddb_playlist_t *playlist, char * artist_o, char * title_o, char * album_o) {
-	ddb_playlist_t *plt;
-	if (!playlist) {
-		plt = deadbeef->plt_get_curr();
-	}
-	else {
-		plt = playlist;
-	}
-	if (!plt) {
-		return NULL;
-	}
-	int it_count = deadbeef->plt_get_item_count (plt, PL_MAIN);
-	if (!it_count) {
-		return NULL;
-	}
-	char * artist = 0; 
-	char * title = 0; 
-	char * album = 0; 
-	if (artist_o && strcmp (artist_o, "*"))
-		artist = strdup_unescaped (artist_o); 
-	if (title_o && strcmp (title_o, "*"))
-		title = strdup_unescaped (title_o); 
-	if (album_o && strcmp (album_o, "*"))
-		album = strdup_unescaped (album_o); 
-	int i;
-	DB_metaInfo_t* meta;
-	DB_playItem_t *item;
-	for (i = 0; 1; i++) {
-		item = deadbeef->plt_get_item_for_idx (plt, i, PL_MAIN);
-		if (!item) {
-			break;
-		}
-		// search if it already exists
-		int matches = 0;
-		int required = 0;
-		artist ? required++ : 0;
-		title ? required++ : 0;
-		album ? required++ : 0;
-		if (!required) {
-			break;
-		}
-		{
-			meta = deadbeef->pl_meta_for_key (item, "artist");
-			if (artist && meta) {
-				if (strcmp(artist,meta->value) == 0) {
-					matches++;
-				}
-			}
-			meta = deadbeef->pl_meta_for_key (item, "title");
-			if (title && meta) {
-				if (strcmp(title,meta->value) == 0) {
-					matches++;
-				}
-			}
-			meta = deadbeef->pl_meta_for_key (item, "album");
-			if (album && meta) {
-				if (strcmp(album,meta->value) == 0) {
-					matches++;
-				}
-			}
-		}
-		if (matches >= required) {
-			if (!playlist) {
-				deadbeef->plt_unref (plt);
-			}
-			free (artist);
-			free (album);
-			free (title);
-			return item;
-		}
-		else {
-			deadbeef->pl_item_unref (item);
-		}
-	}
-	free (artist);
-	free (album);
-	free (title);
-	return NULL;
+    ddb_playlist_t *plt;
+    if (!playlist) {
+        plt = deadbeef->plt_get_curr();
+    }
+    else {
+        plt = playlist;
+    }
+    if (!plt) {
+        return NULL;
+    }
+    int it_count = deadbeef->plt_get_item_count (plt, PL_MAIN);
+    if (!it_count) {
+        return NULL;
+    }
+    char * artist = 0;
+    char * title = 0;
+    char * album = 0;
+    if (artist_o && strcmp (artist_o, "*"))
+        artist = strdup_unescaped (artist_o);
+    if (title_o && strcmp (title_o, "*"))
+        title = strdup_unescaped (title_o);
+    if (album_o && strcmp (album_o, "*"))
+        album = strdup_unescaped (album_o);
+    int i;
+    DB_metaInfo_t* meta;
+    DB_playItem_t *item;
+    for (i = 0; 1; i++) {
+        item = deadbeef->plt_get_item_for_idx (plt, i, PL_MAIN);
+        if (!item) {
+            break;
+        }
+        // search if it already exists
+        int matches = 0;
+        int required = 0;
+        artist ? required++ : 0;
+        title ? required++ : 0;
+        album ? required++ : 0;
+        if (!required) {
+            break;
+        }
+        {
+            meta = deadbeef->pl_meta_for_key (item, "artist");
+            if (artist && meta) {
+                if (strcmp(artist,meta->value) == 0) {
+                    matches++;
+                }
+            }
+            meta = deadbeef->pl_meta_for_key (item, "title");
+            if (title && meta) {
+                if (strcmp(title,meta->value) == 0) {
+                    matches++;
+                }
+            }
+            meta = deadbeef->pl_meta_for_key (item, "album");
+            if (album && meta) {
+                if (strcmp(album,meta->value) == 0) {
+                    matches++;
+                }
+            }
+        }
+        if (matches >= required) {
+            if (!playlist) {
+                deadbeef->plt_unref (plt);
+            }
+            free (artist);
+            free (album);
+            free (title);
+            return item;
+        }
+        else {
+            deadbeef->pl_item_unref (item);
+        }
+    }
+    free (artist);
+    free (album);
+    free (title);
+    return NULL;
 }
 
 // get playlist from escaped string after name
@@ -418,15 +418,15 @@ ddb_playlist_t* cmd_get_playlist (char * name) {
     ddb_playlist_t * plt;
     char buffer[256];
     for (i = 0;(plt = deadbeef->plt_get_for_idx (i)); i++) {
-    	if (!plt) {
-    		break;
-    	}
+        if (!plt) {
+            break;
+        }
         deadbeef->plt_get_title (plt, buffer, 256);
         
         if (strcmp(string, buffer) == 0) {
-        	free (string);
-     		return plt;
-   		}
+            free (string);
+            return plt;
+        }
         deadbeef->plt_unref (plt);
     }
     free (string);
@@ -435,102 +435,102 @@ ddb_playlist_t* cmd_get_playlist (char * name) {
 
 // detect spaces in string
 int has_spaces (const char * string) {
-	int contains_spaces = 0;
-	int i;
-	for (i = 0; string[i]; i++) {
-		if (string[i] == ' ') {
-			contains_spaces = 1;
-			break;
-		}
-	}
-	return contains_spaces;
+    int contains_spaces = 0;
+    int i;
+    for (i = 0; string[i]; i++) {
+        if (string[i] == ' ') {
+            contains_spaces = 1;
+            break;
+        }
+    }
+    return contains_spaces;
 }
 
 // enquote string (put in "") and duplicate
 char * strdup_quoted (const char * string) {
-	int contains_spaces = 1;
-	int i;
-	for (i = 0; string[i]; i++) {
-		if (string[i] == ' ') {
-			contains_spaces = 1;
-			break;
-		}
-	}
-	char * ptr;
-	if (contains_spaces) {
-		ptr = malloc (strlen(string) + 1 + 2);
-		ptr[0] = '\"'; ptr[1] = 0;
-		strcat (ptr, string);
-		strcat (ptr, "\"");
-	}
-	else {
-		ptr = strdup (string);
-	}
-	return ptr;
+    int contains_spaces = 1;
+    int i;
+    for (i = 0; string[i]; i++) {
+        if (string[i] == ' ') {
+            contains_spaces = 1;
+            break;
+        }
+    }
+    char * ptr;
+    if (contains_spaces) {
+        ptr = malloc (strlen(string) + 1 + 2);
+        ptr[0] = '\"'; ptr[1] = 0;
+        strcat (ptr, string);
+        strcat (ptr, "\"");
+    }
+    else {
+        ptr = strdup (string);
+    }
+    return ptr;
 }
 
 // escape string (put in "") if needed and duplicate
 char * strdup_escaped (const char * string) {
-	int contains_spaces = 0;
-	int i;
-	for (i = 0; string[i]; i++) {
-		if (string[i] == ' ') {
-			contains_spaces = 1;
-			break;
-		}
-	}
-	char * ptr;
-	if (contains_spaces) {
-		ptr = malloc (strlen(string) + 1 + 2 + 6);
-		ptr[0] = '\"'; ptr[1] = 0;
-		strcat (ptr, string);
-		strcat (ptr, "\"");
-	}
-	else {
-		ptr = strdup (string);
-	}
-	return ptr;
+    int contains_spaces = 0;
+    int i;
+    for (i = 0; string[i]; i++) {
+        if (string[i] == ' ') {
+            contains_spaces = 1;
+            break;
+        }
+    }
+    char * ptr;
+    if (contains_spaces) {
+        ptr = malloc (strlen(string) + 1 + 2 + 6);
+        ptr[0] = '\"'; ptr[1] = 0;
+        strcat (ptr, string);
+        strcat (ptr, "\"");
+    }
+    else {
+        ptr = strdup (string);
+    }
+    return ptr;
 }
 
 // remove "" from string and duplicate
 char * strdup_unescaped (const char * string) {
-	int contains_app = 0;
-	int i;
-	for (i = 0; string[i]; i++) {
-		if (string[i] == '\"') {
-			contains_app = 1;
-			break;
-		}
-	}
-	char * ptr;
-	if (contains_app) {
-		ptr = malloc (strlen(string));
-		int i;
-		int j = 0;
-		int ap_count = 0;
-		for (i = 0; string[i]; i++) {
-			if (string[i] == '\"' && (i == 0 || string[i+1] == 0)) {
-				ap_count++;
-				continue;
-			}
-			else {
-				ptr[j++] = string[i];
-			}
-		}
-		ptr[j] = 0;
-	}
-	else {
-		ptr = strdup (string);
-	}
-	return ptr;
+    int contains_app = 0;
+    int i;
+    for (i = 0; string[i]; i++) {
+        if (string[i] == '\"') {
+            contains_app = 1;
+            break;
+        }
+    }
+    char * ptr;
+    if (contains_app) {
+        ptr = malloc (strlen(string));
+        int i;
+        int j = 0;
+        int ap_count = 0;
+        for (i = 0; string[i]; i++) {
+            if (string[i] == '\"' && (i == 0 || string[i+1] == 0)) {
+                ap_count++;
+                continue;
+            }
+            else {
+                ptr[j++] = string[i];
+            }
+        }
+        ptr[j] = 0;
+    }
+    else {
+        ptr = strdup (string);
+    }
+    return ptr;
 }
 
 // ARGV
 
 int argv_count (char **argv) {
-	int i;
-	for (i = 0; argv[i] != NULL; i++);
-	return i;
+    int i;
+    for (i = 0; argv[i] != NULL; i++);
+    return i;
 }
 
 char ** argv_alloc (char * cmd) {
@@ -599,47 +599,47 @@ char ** argv_alloc (char * cmd) {
 }
 
 void argv_free (char ** argv) {
-	int i;
-	for (i = 0; argv[i] != NULL; i++)
-		free (argv[i]);
-	free (argv);
+    int i;
+    for (i = 0; argv[i] != NULL; i++)
+        free (argv[i]);
+    free (argv);
     return;
 }
 
 int argv_cat (char ** to, char ** from) {
-	int i;
-	for (i = 0; to[i] != NULL; i++);
-	int j;
-	for (j = 0; from[j] != NULL; j++) {
-		to[i] = strdup (from[j]);
-		i++;
-	}
-	to[i] = NULL;
-	return 0;
+    int i;
+    for (i = 0; to[i] != NULL; i++);
+    int j;
+    for (j = 0; from[j] != NULL; j++) {
+        to[i] = strdup (from[j]);
+        i++;
+    }
+    to[i] = NULL;
+    return 0;
 }
 
 // Properties
 
 int properties_count (property_t **properties) {
-	int i;
-	for (i = 0; properties[i] != NULL; i++);
-	return i;
+    int i;
+    for (i = 0; properties[i] != NULL; i++);
+    return i;
 }
 
 property_t * property_get (property_t **properties, const char * key) {
-	int i;
-	for (i = 0; properties[i] != NULL; i++) {
-		if (strcmp(properties[i]->key, key) == 0) {
+    int i;
+    for (i = 0; properties[i] != NULL; i++) {
+        if (strcmp(properties[i]->key, key) == 0) {
             property_update (properties[i]);
-			return properties[i];
-		}
-	}
-	return NULL;
+            return properties[i];
+        }
+    }
+    return NULL;
 }
 
 int property_set (property_t *property, const char * value) {
-	// todo error checking
-	printf ("property_set called but has no error checking!\n");
+    // todo error checking
+    printf ("property_set called but has no error checking!\n");
     // todo evaluate prop_curr->type_string
     // char *config_argv[] = {"config_i", argv[3], "string", argv[4], NULL };
     //settings_config (4, config_argv, -1);
@@ -666,8 +666,8 @@ int property_set (property_t *property, const char * value) {
         printf ("Failed to set property %s.\n", property->key);
         return -1;
     }
-	deadbeef->conf_set_str (property->key, value);
-	return 0;
+    deadbeef->conf_set_str (property->key, value);
+    return 0;
 }
 
 property_t ** properties_alloc (const char * cmd) {
@@ -676,7 +676,7 @@ property_t ** properties_alloc (const char * cmd) {
     property_t ** properties = malloc (properties_size * sizeof(struct property *));
 
     if (!cmd) {
-    	// return empty list
+        // return empty list
         properties[0] = NULL;
         return properties;
     }
@@ -684,7 +684,7 @@ property_t ** properties_alloc (const char * cmd) {
     strcpy (buffer, cmd);
 
     char * ptr = buffer;
- 	char * nl_ptr = ptr;
+    char * nl_ptr = ptr;
     char * endptr = strrchr (buffer, 0);
     int i;
     int to_break = 0;
@@ -697,23 +697,23 @@ property_t ** properties_alloc (const char * cmd) {
                 return NULL;
             }
         }
-    	//
-    	nl_ptr = strchr (ptr, '\n');
-    	if (!nl_ptr) {
-    		// probably last char
-    		to_break = 1;
-    	}
-    	else {
-    		*nl_ptr = 0;
-    	}
-    	properties[i] = property_alloc (ptr);
+        //
+        nl_ptr = strchr (ptr, '\n');
+        if (!nl_ptr) {
+            // probably last char
+            to_break = 1;
+        }
+        else {
+            *nl_ptr = 0;
+        }
+        properties[i] = property_alloc (ptr);
         if (!properties[i] || to_break) {
             // out of options
             break;
         }
         else {
-        	// next
-        	ptr = ++nl_ptr;
+            // next
+            ptr = ++nl_ptr;
         }
     }
     properties[i] = NULL;
@@ -928,10 +928,10 @@ struct property * property_alloc (char * string) {
 }
 
 void properties_free (property_t ** argv) {
-	int i;
-	for (i = 0; argv[i] != NULL; i++)
-		free (argv[i]);
-	free (argv);
+    int i;
+    for (i = 0; argv[i] != NULL; i++)
+        free (argv[i]);
+    free (argv);
     return;
 }
 
@@ -970,16 +970,16 @@ void property_update (struct property * property) {
 }
 
 int properties_cat (property_t ** to, property_t ** from) {
-	int i;
-	for (i = 0; to[i] != NULL; i++);
-	int j;
-	for (j = 0; from[j] != NULL; j++) {
-		//
-		property_t *temp = malloc (sizeof(property_t));
-		memcpy (temp, from[j], sizeof(property_t));
-		to[i] = temp;
-		i++;
-	}
-	to[i] = NULL;
-	return 0;
+    int i;
+    for (i = 0; to[i] != NULL; i++);
+    int j;
+    for (j = 0; from[j] != NULL; j++) {
+        //
+        property_t *temp = malloc (sizeof(property_t));
+        memcpy (temp, from[j], sizeof(property_t));
+        to[i] = temp;
+        i++;
+    }
+    to[i] = NULL;
+    return 0;
 }
