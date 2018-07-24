@@ -953,11 +953,11 @@ void property_free (struct property * prop) {
 void property_update (struct property * property) {
     DB_conf_item_t *item = NULL;
     item = deadbeef->conf_find (property->key, item);
-    if (!item || strcmp(property->val, item->value) == 0) {
+    if (!item || (property->val != 0 && strcmp(property->val, item->value) == 0)) {
         return;
     }
     char *new = item->value;
-    if (property->type == TYPE_SELECT) {
+    if (property->type == TYPE_SELECT && item->value) {
         char *endptr;
         int num = strtol (item->value, &endptr, 10);
         if (endptr == item->value) {
@@ -965,8 +965,13 @@ void property_update (struct property * property) {
         }
         new = property->val_possible[num];
     }
-    free (property->val);
-    property->val = strdup (new);
+    if (property->val) {
+        free (property->val);
+        property->val = 0;
+    }
+    if (new) {
+        property->val = strdup (new);
+    }
 }
 
 int properties_cat (property_t ** to, property_t ** from) {
