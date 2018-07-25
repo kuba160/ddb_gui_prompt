@@ -21,10 +21,14 @@
     3. This notice may not be removed or altered from any source distribution.
 */
 
+void plug_table_destroy ();
+
 char * settings_config (int argc, char * argv[], int iter);
 
 char * settings_output (int argc, char * argv[], int iter);
 
 char * settings_plugins (int argc, char * argv[], int iter);
+
+char * settings_sound (int argc, char * argv[], int iter);
 
 char * cmd_settings (int argc, char * argv[], int iter);

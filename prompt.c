@@ -148,9 +148,23 @@ ui_disconnect (void) {
     return 0;
 }
 
+void (*call_on_exit[8]) (void) = {NULL};
+
+void call_on_exit_pop (void (*func)(void)) {
+	int i;
+	for (i = 0; call_on_exit[i]; i++);
+	if (i >= 8-1)
+	   return;
+	call_on_exit[i] = func;
+	call_on_exit[i+1] = NULL;
+}
+
 static int
 ui_stop (void) {
     ui_running = 0;
+    int i;
+    for (i = 0; call_on_exit[i]; i++)
+        call_on_exit[i] ();
     return 0;
 }
 

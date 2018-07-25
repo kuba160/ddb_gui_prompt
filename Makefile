@@ -15,12 +15,23 @@ PREFIX=/usr/local/lib/deadbeef
 PLUGNAME=prompt
 PLUGNAME_PREFIX=ddb_gui
 LIBS=-lreadline
-C_FILES= assets.c cmd.c cmd_tools.c settings.c
+C_FILES= assets.c cmd.c cmd_tools.c props.c settings.c
 C_FILES_OUT = $(C_FILES:.c=.o)
-all:
+
+all: props.c
 	$(CC) -std=$(STD) -c $(CFLAGS) $(PLUGNAME).c $(C_FILES)
 	$(CC) -std=$(STD) -shared $(CFLAGS) -o $(PLUGNAME_PREFIX)_$(PLUGNAME).$(SUFFIX) $(PLUGNAME).o $(C_FILES_OUT) $(LIBS)
+
 install:
 	cp $(PLUGNAME_PREFIX)_$(PLUGNAME).$(SUFFIX) $(PREFIX)
+
+properties_gen:
+	$(CC) -std=$(STD)  $(CFLAGS) -o properties_gen properties_gen.c properties.c cmd_tools.c
+
+props.c: properties_gen
+	./properties_gen
+
 clean:
-	rm -fv $(PLUGNAME).o $(C_FILES_OUT) $(PLUGNAME_PREFIX)_$(PLUGNAME).$(SUFFIX)
+	rm -fv $(PLUGNAME).o $(C_FILES_OUT) props.c props.h $(PLUGNAME_PREFIX)_$(PLUGNAME).$(SUFFIX)
+
+.PHONY: properties_gen

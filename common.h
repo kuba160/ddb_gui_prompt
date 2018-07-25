@@ -35,4 +35,6 @@
 #define SYMBOL_STOPPED ">"
 #endif
 
+void call_on_exit_pop (void (*func)(void));
+
 #endif

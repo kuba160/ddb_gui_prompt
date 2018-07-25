@@ -29,11 +29,12 @@
 #include "cmd_tools.h"
 
 #include "cmd.h"
+#include "props.h"
 
 extern DB_functions_t *deadbeef;
 
-const char * main_s[] = {"plugins", "config", "output", NULL};
-char * (*main_f[])(int, char *[], int) = {settings_plugins, settings_config, settings_output, NULL};
+const char * main_s[] = {"plugins", "config", "output", "sound", NULL};
+char * (*main_f[])(int, char *[], int) = {settings_plugins, settings_config, settings_output, settings_sound, NULL};
 
 // Settings
 // - Sound
@@ -204,7 +205,7 @@ char * settings_config (int argc, char * argv[], int iter) {
 
 // MAX_PLUGINS = 100 (defined in deadbeef/plugins.c)
 struct DB_plugin_s * plugins[101] = {NULL};
-const char * plugin_names[128];
+const char * plugin_names[101];
 property_t ** plugin_properties[101];
 int plug_table_generated = 0;
 
@@ -264,6 +265,26 @@ void plug_table_generate () {
         plugins[i] = NULL;
         plugin_names[i] = NULL;
         plug_table_generated = 1;
+        call_on_exit_pop (plug_table_destroy);
+    }
+}
+
+void plug_table_destroy () {
+    if (plug_table_generated) {
+        int i;
+        for (i = 0; plugins[i] != 0; i++) {
+            if (i >= 100) {
+                printf ("plug list max!\n");
+                break;
+            }
+            if (plugins[i]->configdialog) {
+                properties_free (plugin_properties[i]);
+            }
+        }
+        plugin_properties[0] = NULL;
+        plugin_names[0] = NULL;
+        plugins[0] = NULL;
+        plug_table_generated = 0;
     }
 }
 
@@ -487,6 +508,7 @@ char * settings_output (int argc, char * argv[], int iter) {
             return CMD_EXECUTED;
         }
         else if (strcmp (argv[1], "device") == 0) {
+            NO_TAB_COMPLETION;
             const char *name = 0;
             if (curr->plugin.id) {
                 name = curr->plugin.id;
@@ -495,10 +517,98 @@ char * settings_output (int argc, char * argv[], int iter) {
                 name = curr->plugin.name;
             }
             printf ("Available output devices for %s:\n", name);
+            printf ("TODO\n");
             // TODO
         }
     }
     return NULL;
+}
+
+int p_sound_filled = 0;
+
+void settings_sound_update () {
+    struct property2 * p;
+    if (!plugins_output_initiated) {
+        struct DB_output_s ** plgs = deadbeef->plug_get_output_list ();
+        int i;
+        for (i = 0; plgs[i]; i++) {
+            if (i >= 8) {
+                printf ("plugins_output max!\n");
+                break;
+            }
+            plugins_output[i] = plgs[i];
+            if (plgs[i]->plugin.id)
+                plugins_output_names[i] = plgs[i]->plugin.id;
+            else
+                plugins_output_names[i] = plgs[i]->plugin.name;
+        }
+        plugins_output[i] = NULL;
+        plugins_output_names[i] = NULL;
+    }
+    // output plugins
+    p = p_sound[0];
+    if (!p_sound_filled) {
+        int c;
+        for (c = 0; plugins_output[c]; c++);
+        p->type_count = c;
+        p->val_possible = malloc ((c+1) * sizeof (char *));
+        int d;
+        for (d = 0; plugins_output[d]; d++) {
+            p->val_possible[d] = plugins_output[d]->plugin.name;
+            if (strcmp (plugins_output[d]->plugin.name, p->def) == 0) {
+                char buf[8];
+                sprintf (buf, "%d", d);
+                p->def = strdup (buf);
+            }
+        }
+        p->val_possible[d] = 0;
+    }
+}
+
+char * settings_sound (int argc, char * argv[], int iter) {
+    // TODO
+    return NULL;
+    settings_sound_update ();
+    TAB_COMPLETION_PROPERTIES(1,p_sound);
+    TAB_COMPLETION_PROPERTIES_OPTION(2,1,p_sound);
+    TAB_COMPLETION_END;
+    if (argc == -1) {
+        printf ("sound: customize output sound\n");
+    }
+    else if (argc == 1) {
+        int i;
+        struct property * prop;
+        for (i = 0; (prop = p_sound[i]); i++) {
+            property_update (prop);
+            printf ("%d: %s\n", i, prop->name);
+            printf ("%s = %s\n(default: %s)\n\n", prop->key, prop->val, prop->def);
+        }
+        return NULL;
+    }
+    else if (argc == 2) {
+        property_t * prop = property_get (p_sound, argv[1]);
+        if (!prop) {
+            printf ("Property %s not found.\n", argv[1]);
+        }
+        char * value = "(no value)";
+        if (prop->val) {
+            value = prop->val;
+        }
+        printf ("%s\n", prop->name);
+        printf ("%s = %s (default: %s)\n", prop->key, value, prop->def);
+    }
+    else if (argc == 3) {
+        property_t * prop = property_get (p_sound, argv[1]);
+        if (prop) {
+            property_set (prop, argv[2]);
+            return NULL;
+        }
+        else {
+            printf ("Property %s not found\n",argv[1]);
+            return NULL;
+        }
+    }
+    return CMD_NOTFOUND;
 }
 
 

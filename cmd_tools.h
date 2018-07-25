@@ -49,6 +49,26 @@ typedef struct property {
     char * def;
 } property_t;
 
+// property of extended gui syntax
+typedef struct property2 {
+    char * name;
+    int type;
+    const char * type_string;
+    int type_min;
+    int type_max;
+    int type_step;
+    int type_count;
+    char * key;
+    char * val;
+    char ** val_possible;
+    char * def;
+    // v2
+    // group (or groups if nested) property occurs
+    char * group[5];
+    // what property is required to enable this property (can be nested, pointer can have its own 'requires')
+    struct property2 * requires;
+
+} property2_t;
 
 // Return values for commands, CMD_EXECUTED equals NULL, can change in future
 #define CMD_DIRECTORY "Directory"

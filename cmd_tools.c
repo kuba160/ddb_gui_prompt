@@ -547,13 +547,25 @@ char ** argv_alloc (char * cmd) {
     strcpy (buffer, cmd);
 
     int vi = 0;
-    // quotes: should work fine
+    // quotes_multi is some kind of hack which allows to have quotes inside quotes (only on begin)
+    int quotes_multi = 0;
     #define SPECIAL_CHAR 27
     {
         int q;
         int spec_mode_on = 0;
         for (q = 0; buffer[q] != 0; q++) {
             if (buffer[q] == '\"') {
+                if (buffer[q+1] == '\"' && quotes_multi == 0) {
+                    quotes_multi = 3;
+                    spec_mode_on = 1;
+                    continue;
+                }//
+                if (quotes_multi > 0) {
+                    quotes_multi--;
+                    if (!quotes_multi)
+                        spec_mode_on = 0;
+                    continue;
+                }
                 spec_mode_on = !spec_mode_on;
                 continue;
             }
@@ -707,11 +719,15 @@ property_t ** properties_alloc (const char * cmd) {
             *nl_ptr = 0;
         }
         properties[i] = property_alloc (ptr);
-        if (!properties[i] || to_break) {
+        if (/*v2 !properties[i] || */to_break) {
             // out of options
+            i++;
             break;
         }
         else {
+            if (!properties[i]) {
+                i--;
+            }
             // next
             ptr = ++nl_ptr;
         }
@@ -720,11 +736,14 @@ property_t ** properties_alloc (const char * cmd) {
     return properties;
 }
 
+char *property_groups_curr[5] = {NULL};
+struct property2 *requires_curr[5] = {NULL};
+
 struct property * property_alloc (char * string) {
     if (!string || strlen(string) == 0) {
         return NULL;
     }
-    struct property * temp = malloc (sizeof(struct property));
+    struct property2 * temp = malloc (sizeof(struct property2));
     memset (temp, 0, sizeof(struct property));
     if (!temp) {
         return NULL;
@@ -739,7 +758,8 @@ struct property * property_alloc (char * string) {
             *semicolon = 0;
         }
     }
-    char ** argv = argv_alloc (string_f);
+    char ** argv_o = argv_alloc (string_f);
+    char ** argv = argv_o;
 
     if (!argv[0]) {
         argv_free (argv);
@@ -748,8 +768,60 @@ struct property * property_alloc (char * string) {
     }
 
     // PROPERTY name type key def
+    int set_curr_require = 0;
     if (strcmp (argv[0], "property") != 0) {
-        printf ("invalid header\n");
+        do {
+            // property2
+            if (strcmp (argv[0], "group_begin") == 0) {
+                int i;
+                for (i = 0; property_groups_curr[i]; i++);
+                if (i >= 5) {
+                    argv_free (argv_o);
+                    free (temp);
+                    printf ("Nested groups reached max!\n");
+                    return NULL;
+                }
+                if (argv[1][0] == ';') {
+                    property_groups_curr[i] = "";
+                    property_groups_curr[i+1] = NULL;
+                }
+                else {
+                    property_groups_curr[i] = strdup (argv[1]);
+                }
+                argv_free (argv_o);
+                free (temp);
+                return NULL;
+            }
+            else if (strcmp (argv[0], "group_require") == 0) {
+                argv++;
+                set_curr_require = 1;
+                break;
+            }
+            else if (strcmp (argv[0], "group_end") == 0) {
+                argv_free (argv_o);
+                free (temp);
+                int i;
+                for (i = 0; property_groups_curr[i]; i++);
+                if (i-1 >= 0) {
+                    property_groups_curr[i-1] = NULL;
+                    requires_curr[i-1] = NULL;
+                }
+                return NULL;
+            }
+            else if (strcmp (argv[0], "separator") == 0) {
+                argv_free (argv_o);
+                free (temp);
+                return NULL;
+            }
+            printf ("unknown item \"%s\"\n", argv[0]);
+            argv_free (argv);
+            free (temp);
+            return NULL;
+        }
+        while (0);
+    }
+    if (argv_count (argv) < 5) {
+        printf ("property for string \"%s\": not enough arguments\n", string);
         argv_free (argv);
         free (temp);
         return NULL;
@@ -792,11 +864,11 @@ struct property * property_alloc (char * string) {
             if (array[0] == endptr) {
                 printf ("type min failed\n");
             }
-            temp->type_max = strtol (array[0], &endptr, 10);
+            temp->type_max = strtol (array[1], &endptr, 10);
             if (array[0] == endptr) {
                 printf ("type max failed\n");
             }
-            temp->type_step = strtol (array[0], &endptr, 10);
+            temp->type_step = strtol (array[2], &endptr, 10);
             if (array[0] == endptr) {
                 printf ("type step failed\n");
             }
@@ -822,11 +894,11 @@ struct property * property_alloc (char * string) {
             if (array[0] == endptr) {
                 printf ("type min failed\n");
             }
-            temp->type_max = strtol (array[0], &endptr, 10);
+            temp->type_max = strtol (array[1], &endptr, 10);
             if (array[0] == endptr) {
                 printf ("type max failed\n");
             }
-            temp->type_step = strtol (array[0], &endptr, 10);
+            temp->type_step = strtol (array[2], &endptr, 10);
             if (array[0] == endptr) {
                 printf ("type step failed\n");
             }
@@ -852,11 +924,11 @@ struct property * property_alloc (char * string) {
             if (array[0] == endptr) {
                 printf ("type min failed\n");
             }
-            temp->type_max = strtol (array[0], &endptr, 10);
+            temp->type_max = strtol (array[1], &endptr, 10);
             if (array[0] == endptr) {
                 printf ("type max failed\n");
             }
-            temp->type_step = strtol (array[0], &endptr, 10);
+            temp->type_step = strtol (array[2], &endptr, 10);
             if (array[0] == endptr) {
                 printf ("type step failed\n");
             }
@@ -875,9 +947,15 @@ struct property * property_alloc (char * string) {
             }
         }
     }
+    else {
+        printf ("unknown property type \"%s\", ignoring\n", argv[2]);
+        argv_free (argv);
+        free (temp);
+        return NULL;
+    }
 
     // default values
-    if (temp->type == TYPE_SELECT) {
+    if (temp->type == TYPE_SELECT && temp->type_count) {
         // gen temp->val_possible
         temp->val_possible = malloc (sizeof (char *) * (temp->type_count +1));
         if (!temp->val_possible) {
@@ -894,7 +972,7 @@ struct property * property_alloc (char * string) {
         char *endptr;
         int num = strtol (argv[4], &endptr, 10);
         if (endptr == argv[4]) {
-            printf ("strtol failed\n");
+            printf ("strtol failed for %s, is \"%s\" a number?\n", argv[3], argv[4]);
         }
         temp->def = strdup (temp->val_possible[num]);
     }
@@ -922,15 +1000,31 @@ struct property * property_alloc (char * string) {
             }
         }
     }
-    //
-    argv_free (argv);
-    return temp;
+    // property2
+    int r;
+    for (r = 0; requires_curr[r]; r++);
+    if (r > 0) {
+        temp->requires = (struct property2 *) requires_curr[r-1];
+    }
+    else {
+        temp->requires = NULL;
+    }
+    if (set_curr_require) {
+        requires_curr[r] = temp;
+        requires_curr[r+1] = NULL;
+    }
+    for (r = 0; property_groups_curr[r]; r++) {
+        temp->group[r] = property_groups_curr[r];
+    }
+    temp->group[r] = NULL;
+    argv_free (argv_o);
+    return (struct property *) temp;
 }
 
 void properties_free (property_t ** argv) {
     int i;
     for (i = 0; argv[i] != NULL; i++)
-        free (argv[i]);
+        property_free (argv[i]);
     free (argv);
     return;
 }
