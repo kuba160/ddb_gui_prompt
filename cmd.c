@@ -424,11 +424,14 @@ char * cmd_list (int argc, char * argv[], int iter) {
         context.iter = PL_MAIN;
         context.update = 0;
         context.dimmed = 0;
+        DB_playItem_t *item = deadbeef->plt_get_first (plt, PL_MAIN);
+        if (!item) {
+            if (plt)
+                deadbeef->plt_unref (plt);
+            return NULL;
+        }
         char * script = "%tracknumber%. %artist% - %title% /// %album%\n";
         char * code_script = deadbeef->tf_compile (script);
-        DB_playItem_t *item = deadbeef->plt_get_first (plt, PL_MAIN);
-        if (!item)
-            return NULL;
         int i = 0;
         char buffer[256];
         do {
@@ -583,6 +586,7 @@ char * cmd_info (int argc, char * argv[], int iter) {
             char buffer[256];
 
             deadbeef->tf_eval (&context, code_script, buffer, 256);
+            deadbeef->tf_free (code_script);
             printf ("%s\n",buffer);
 
             float item_length = deadbeef->pl_get_item_duration (curr_track);
@@ -618,6 +622,11 @@ char * cmd_info (int argc, char * argv[], int iter) {
         if (!item) {
             // empty or failed
             printf ("Empty.\n");
+            deadbeef->tf_free (code_script);
+            if (plt)
+                deadbeef->plt_unref (plt);
+            if (curr_track)
+                deadbeef->pl_item_unref (curr_track);
             return NULL;
         }
         int i = num_first;
@@ -975,6 +984,12 @@ int cmd (char * buffer) {
 
     int argc = argv_count (argv);
     if (argc == 0) {
+        if (argv) {
+            argv_free (argv);
+        }
+        if (argv_2) {
+            argv_free (argv_2);
+        }
         return -1;
     }
 
