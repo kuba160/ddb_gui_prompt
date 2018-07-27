@@ -41,7 +41,7 @@ extern int ui_running;
 const char * cmd_s[] = {"help", "play", "pause", "resume", "stop", "next", "prev", "seek", "signal", "volume", "quit", "list", "playlist", "playlists", "info", "settings", 0};
 char * (*cmd_f[])(int, char *[], int) = {cmd_help, cmd_play, cmd_play_pause, cmd_play_pause, cmd_stop, cmd_next, cmd_prev, cmd_seek, cmd_signal, cmd_volume, cmd_quit, cmd_list, cmd_playlist, cmd_playlists, cmd_info, cmd_settings, NULL};
 
-const char * dirm_s[] = {"next", "prev", "exit", "list", "cd", NULL};
+const char * dirm_s[] = {"next", "prev", "exit", "list", "cd", "quit", "help",  NULL};
 
 char cmd_path[128];
 char * cmd_path_argv[16] = {NULL};
@@ -698,7 +698,7 @@ char * cmd_dirm (int argc, char * argv[], int iter) {
 
     if (argc >= 1) {
         //const char * dirm_s[] = {"next", "prev", "exit", "list", "cd", NULL};
-        if (strcmp (dirm_name(argv[0]), "exit") == 0) {
+        if (strcmp (dirm_name(argv[0]), "exit") == 0 || strcmp (dirm_name(argv[0]), "quit") == 0) {
             if (argc == 1) {
                 // cd to main dir
                 char ** empty = {NULL};
@@ -746,6 +746,24 @@ char * cmd_dirm (int argc, char * argv[], int iter) {
                 // todo concat cmd_path_argv and argv
                 // list specified dir
                 //cmd_change_path (1, argv+1);
+            }
+        }
+        else if (strcmp (dirm_name(argv[0]), "help") == 0) {
+            if (argc == 1) {
+                // print help of current directory
+                int num = cmd_num (cmd_path_argv[0]);
+                if (num < 0) {
+                    //printf
+                    return CMD_NOTFOUND;
+                }
+                cmd_f[num] (-1, cmd_path_argv, -1);
+                return NULL;
+            }
+            else {
+                printf ("help does n");
+            }
+            if (argc == 2) {
+                cmd_change_path (1, argv+1);
             }
         }
     }
@@ -881,7 +899,7 @@ int cmd_find (char * cmd) {
     for (i = 0; cmd_s[i] != 0; i++) {
         if (strcmp(cmd, cmd_s[i]) == 0) {
             exact_cmd = i;
-            break;
+            // value can be overridden by dirm
         }
         if (strncmp(cmd, cmd_s[i], strlen(cmd)) == 0) {
             possible_cmds[poss_p] = i;
