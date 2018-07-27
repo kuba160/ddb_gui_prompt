@@ -12,6 +12,7 @@
 #define KCYN  "\x1B[36m"
 #define KWHT  "\x1B[37m"
 #define KBLD  "\x1B[1m" // bold
+#define KDIM  "\x1B[2m" // dim
 #else
 #define KNRM ""
 #define KRED ""
@@ -22,6 +23,7 @@
 #define KCYN ""
 #define KWHT ""
 #define KBLD ""
+#define KDIM ""
 #endif
 
 //#define USE_UNICODE_SYMBOLS
