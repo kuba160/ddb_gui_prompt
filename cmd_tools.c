@@ -320,14 +320,19 @@ char * cmd_tab_complete_meta (char * meta_s, char **argv, int iter) {
 // tab-complete after properties
 char * cmd_tab_complete_properties (struct property **table, char **argv, int iter) {
     int i;
-    const char * strings[32];
+    int o = 0;
+    int size = properties_count(table)+1;
+    const char * strings[size];
     for (i = 0; table[i]; i++) {
-        if (i >= 32) {
+        if (i >= size) {
             break;
         }
-        strings[i] = table[i]->key;
+        if (is_property_available (table[i])) {
+            strings[o] = table[i]->key;
+            o++;
+        }
     }
-    strings[i] = NULL;
+    strings[o] = NULL;
     return cmd_tab_complete_table (strings, argv, iter);
 }
 
