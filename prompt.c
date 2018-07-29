@@ -163,8 +163,10 @@ static int
 ui_stop (void) {
     ui_running = 0;
     int i;
-    for (i = 0; call_on_exit[i]; i++)
+    for (i = 0; call_on_exit[i]; i++) {
         call_on_exit[i] ();
+        call_on_exit[i] = NULL;
+    }
     return 0;
 }
 
