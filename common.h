@@ -48,4 +48,6 @@
 
 void call_on_exit_pop (void (*func)(void));
 
+void readline_reset (void);
+
 #endif

@@ -51,9 +51,7 @@ time_t lastint = 0;
 // intHandler handles Ctrl-C signal, it will close player after three signals within 2 seconds
 void intHandler (int dummy) {
     // print prompt again
-    rl_backward_kill_line (0, 0);
-    fputc ('\n', stdout);
-    rl_forced_update_display ();
+    readline_reset ();
     if (!lastint) {
         lastint = time (0);
     }
@@ -146,6 +144,13 @@ ui_connect (void) {
 static int
 ui_disconnect (void) {
     return 0;
+}
+
+void readline_reset (void) {
+    rl_backward_kill_line (0, 0);
+    fputc ('\n', stdout);
+    fflush (stdout);
+    rl_forced_update_display ();
 }
 
 void (*call_on_exit[8]) (void) = {NULL};
