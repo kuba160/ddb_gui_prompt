@@ -29,6 +29,10 @@ char * settings_output (int argc, char * argv[], int iter);
 
 char * settings_plugins (int argc, char * argv[], int iter);
 
+void settings_sound_update ();
+
+void settings_sound_destroy ();
+
 char * settings_sound (int argc, char * argv[], int iter);
 
 char * cmd_settings (int argc, char * argv[], int iter);

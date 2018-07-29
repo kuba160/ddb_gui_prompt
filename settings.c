@@ -33,8 +33,8 @@
 
 extern DB_functions_t *deadbeef;
 
-const char * main_s[] = {"plugins", "config", "output", "sound", NULL};
-char * (*main_f[])(int, char *[], int) = {settings_plugins, settings_config, settings_output, settings_sound, NULL};
+const char * main_s[] = {"plugins", "config", "sound", NULL};
+char * (*main_f[])(int, char *[], int) = {settings_plugins, settings_config, settings_sound, NULL};
 
 // Settings
 // - Sound
@@ -437,95 +437,39 @@ struct DB_output_s * plugins_output[8] = {NULL};
 const char * plugins_output_names[8] = {NULL};
 char plugins_output_initiated = 0;
 
-char * settings_output (int argc, char * argv[], int iter) {
-    if (!plugins_output_initiated) {
-        struct DB_output_s ** plgs = deadbeef->plug_get_output_list ();
-        int i;
-        for (i = 0; plgs[i]; i++) {
-            if (i >= 8) {
-                printf ("plugins_output max!\n");
-                break;
-            }
-            plugins_output[i] = plgs[i];
-            if (plgs[i]->plugin.id)
-                plugins_output_names[i] = plgs[i]->plugin.id;
-            else
-                plugins_output_names[i] = plgs[i]->plugin.name;
-        }
-        plugins_output[i] = NULL;
-        plugins_output_names[i] = NULL;
-    }
+struct soundcards_userdata {
+    int i;
+    int size;
+    char **out;
+    char **out_names;
+};
 
-    if (argc == -1) {
-        printf ("output: select output plugin and device\n");
-        printf ("\tplugin - show or select plugin\n");
-        printf ("\tdevice - show or select output device\n");
-        return NULL;
+void
+enum_soundcards_callback (const char *name, const char *desc, void *userdata) {
+    struct soundcards_userdata * u = (struct soundcards_userdata *) userdata;
+    if (u->i == -1) {
+        return;
     }
-    else if (argc == 1) {
-        return CMD_DIRECTORY;
-    }
-    else if (argc >= 2) {
-        const char * options[] = {"plugin", "device", NULL};
-        TAB_COMPLETION_TABLE(1, options);
-
-        struct DB_output_s *curr = deadbeef->get_output ();
-        if (strcmp (argv[1], "plugin") == 0) {
-            if (argc == 3) {
-                TAB_COMPLETION_TABLE(2, plugins_output_names);
-                // find plugin
-                struct DB_output_s *new_output = NULL;
-                int i;
-                for (i = 0; plugins_output_names[i]; i++) {
-                    if (strcmp (plugins_output_names[i], argv[2]) == 0) {
-                        new_output = plugins_output[i];
-                        break;
-                    }
-                }
-                if (!new_output) {
-                    printf ("Output plugin %s not found.\n", argv[2]);
-                    return CMD_EXECUTED;
-                }
-                deadbeef->conf_set_str ("output_plugin", new_output->plugin.name);
-                deadbeef->sendmessage (DB_EV_REINIT_SOUND, 0, 0, 0);
-                return NULL;
-            }
-            else if (argc > 3) {
-                return CMD_NOTFOUND;
-            }
-            printf ("Available output plugins:\n");
-            int i;
-            for (i = 0; plugins_output[i]; i++) {
-                const char *current_s = "";
-                if (curr == plugins_output[i]) {
-                    printf (KWHT);
-                    current_s = "(current)";
-                }
-                printf ("%d: %s (%s) %s\n" KNRM,i, plugins_output[i]->plugin.id, plugins_output[i]->plugin.name, current_s);
-            }
-            return CMD_EXECUTED;
-        }
-        else if (strcmp (argv[1], "device") == 0) {
-            NO_TAB_COMPLETION;
-            const char *name = 0;
-            if (curr->plugin.id) {
-                name = curr->plugin.id;
-            }
-            else {
-                name = curr->plugin.name;
-            }
-            printf ("Available output devices for %s:\n", name);
-            printf ("TODO\n");
-            // TODO
+    if (u->i >= u->size) {
+        u->size *= 2;
+        u->out = realloc (u->out, u->size * sizeof (char *));
+        u->out_names = realloc (u->out_names, u->size * sizeof (char *));
+        if (!u->out || !u->out_names) {
+            printf ("reallocation failed!\n");
+            u->i = -1;
+            return;
         }
     }
-    return NULL;
+    u->out[u->i] = strdup (desc);
+    u->out_names[u->i] = strdup (name);
+    u->i++;
+    return;
 }
 
-int p_sound_filled = 0;
+char **soundcards = NULL;
 
 void settings_sound_update () {
-    struct property2 * p;
+    struct property * p;
     if (!plugins_output_initiated) {
         struct DB_output_s ** plgs = deadbeef->plug_get_output_list ();
         int i;
@@ -542,30 +486,111 @@ void settings_sound_update () {
         }
         plugins_output[i] = NULL;
         plugins_output_names[i] = NULL;
+
+        // translations
+        #ifdef ENABLE_NLS
+        for (i = 0; p_sound[i]; i++) {
+            p_sound[i]->name = _(p_sound[i]->name);
+        }
+        #endif
+        // output plugins
+        p = p_sound[0];
+        if (1) {
+            int c;
+            for (c = 0; plugins_output[c]; c++);
+            p->type_count = c;
+            p->val_possible = malloc ((c+1) * sizeof (char *));
+            int d;
+            for (d = 0; plugins_output[d]; d++) {
+                p->val_possible[d] = (char *) plugins_output[d]->plugin.name;
+            }
+            p->val_possible[d] = 0;
+        }
+        call_on_exit_pop (settings_sound_destroy);
     }
-    // output plugins
-    p = p_sound[0];
-    if (!p_sound_filled) {
-        int c;
-        for (c = 0; plugins_output[c]; c++);
-        p->type_count = c;
-        p->val_possible = malloc ((c+1) * sizeof (char *));
-        int d;
-        for (d = 0; plugins_output[d]; d++) {
-            p->val_possible[d] = plugins_output[d]->plugin.name;
-            if (strcmp (plugins_output[d]->plugin.name, p->def) == 0) {
-                char buf[8];
-                sprintf (buf, "%d", d);
-                p->def = strdup (buf);
+    // soundcard update
+    p = (struct property *) p_sound[1];
+    struct DB_plugin_s *output = (struct DB_plugin_s *) (struct DB_output_s *) deadbeef->get_output ();
+    if (p && output && strncmp (p->key, output->id, strlen(output->id)) != 0) {
+        if (plugins_output_initiated) {
+            free (p->key);
+            free (p->val);
+            if (p->type_count) {
+                int a;
+                for (a = 0; p->val_possible[a]; a++) {
+                    free (p->val_possible[a]);
+                    free (soundcards[a]);
+                }
+                free (p->val_possible);
+                if (soundcards) {
+                    free (soundcards);
+                    soundcards = NULL;
+                }
+
             }
         }
-        p->val_possible[d] = 0;
+        char buf[strlen(output->id) + 10 + 1];
+        strcpy (buf, output->id);
+        strcat (buf,"_soundcard");
+        p->key = strdup (buf);
+        if (((struct DB_output_s *) output)->enum_soundcards) {
+            struct soundcards_userdata scards = {0, 0, NULL};
+            scards.out = malloc (16 * sizeof (char *));
+            scards.out_names = malloc (16 * sizeof (char *));
+            scards.size = 16;
+            ((struct DB_output_s *) output)->enum_soundcards (enum_soundcards_callback, &scards);
+            if (scards.i >= scards.size) {
+                scards.size += 2;
+                scards.out = realloc (scards.out, scards.size * sizeof (char *));
+                scards.out_names = realloc (scards.out_names, scards.size * sizeof (char *));
+            }
+            else {
+                scards.size = scards.i + 2;
+                scards.out = realloc (scards.out, scards.size * sizeof (char *));
+                scards.out_names = realloc (scards.out_names, scards.size * sizeof (char *));
+            }
+            scards.out[scards.i] = strdup ("default");
+            scards.out_names[scards.i++] = strdup ("default");
+            scards.out[scards.i] = NULL;
+            scards.out_names[scards.i] = NULL;
+            p->val_possible = scards.out;
+            p->type_count = scards.i;
+            soundcards = scards.out_names;
+            p->val = 0;
+        }
+        else {
+            p->type_count = 0;
+            p->val = strdup ("default");
+        }
     }
+    plugins_output_initiated = 1;
+}
+
+void settings_sound_destroy () {
+        if (plugins_output_initiated) {
+            property_t *p = p_sound[0];
+            if (p->val_possible)
+                free (p->val_possible);
+            p = p_sound[1];
+            free (p->key);
+            free (p->val);
+            if (p->type_count) {
+                int a;
+                for (a = 0; p->val_possible[a]; a++) {
+                    free (p->val_possible[a]);
+                    free (soundcards[a]);
+                }
+                free (p->val_possible);
+                if (soundcards) {
+                    free (soundcards);
+                    soundcards = NULL;
+                }
+            }
+        }
 }
 
 char * settings_sound (int argc, char * argv[], int iter) {
     // TODO
-    return NULL;
     settings_sound_update ();
     TAB_COMPLETION_PROPERTIES(1,p_sound);
     TAB_COMPLETION_PROPERTIES_OPTION(2,1,p_sound);
@@ -574,31 +599,49 @@ char * settings_sound (int argc, char * argv[], int iter) {
         printf ("sound: customize output sound\n");
     }
     else if (argc == 1) {
-        int i;
-        struct property * prop;
-        for (i = 0; (prop = p_sound[i]); i++) {
-            property_update (prop);
-            printf ("%d: %s\n", i, prop->name);
-            printf ("%s = %s\n(default: %s)\n\n", prop->key, prop->val, prop->def);
-        }
+        properties_print (p_sound);
         return NULL;
     }
     else if (argc == 2) {
         property_t * prop = property_get (p_sound, argv[1]);
         if (!prop) {
             printf ("Property %s not found.\n", argv[1]);
+            return NULL;
         }
-        char * value = "(no value)";
-        if (prop->val) {
-            value = prop->val;
-        }
-        printf ("%s\n", prop->name);
-        printf ("%s = %s (default: %s)\n", prop->key, value, prop->def);
+        property_print (prop);
+        return NULL;
     }
     else if (argc == 3) {
         property_t * prop = property_get (p_sound, argv[1]);
         if (prop) {
-            property_set (prop, argv[2]);
+            int ret = 0;
+            if (prop == p_sound[1]) {
+                int i;
+                char * unescaped = strdup_unescaped (argv[2]);
+                char * name = NULL;
+                for (i = 0; prop->val_possible[i]; i++) {
+                    if (strcmp(prop->val_possible[i], unescaped) == 0) {
+                        name = soundcards[i];
+                        break;
+                    }
+                }
+                free (unescaped);
+                if (name) {
+                    deadbeef->conf_set_str (prop->key, name);
+                    ret = 0;
+                }
+                else {
+                    printf ("Unknown soundcard.\n");
+                    return NULL;
+                }
+            }
+            else {
+                ret = property_set (prop, argv[2]);
+            }
+            if (!ret && strcmp (prop->key, "output_plugin") == 0) {
+                deadbeef->sendmessage (DB_EV_REINIT_SOUND, 0, 0, 0);
+                readline_reset ();
+            }
             return NULL;
         }
         else {
