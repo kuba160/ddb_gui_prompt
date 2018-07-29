@@ -375,7 +375,7 @@ char * cmd_help (int argc, char * argv[], int iter) {
         if (i == FIND_NOTFOUND)
             printf ("%s: command %s not found\n", cmd_name(argv[0]), argv[1]);
         else if (i == FIND_AMBIGUOUS)
-            return NULL;
+            cmd_ambiguous_print (argv[1]);
         else {
             char * empty[] = {argv[1], NULL};
             cmd_f[i] (-1, empty, -1);
