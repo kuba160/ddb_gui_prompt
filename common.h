@@ -37,6 +37,15 @@
 #define SYMBOL_STOPPED ">"
 #endif
 
+#define ENABLE_NLS
+#ifdef ENABLE_NLS
+#include <libintl.h>
+#define _(s) gettext(s)
+#else
+#define _(s) (s)
+#endif
+
+
 void call_on_exit_pop (void (*func)(void));
 
 #endif
