@@ -1,14 +1,14 @@
 char * configdialog = 
 "tab sound;\n"
-"property \"Output plugin:\" select[0] output_plugin \"ALSA output plugin\" ... ;\n"
-"property \"Output device:\" select[0] ID_soundcard default ... ;\n"
+"property \"Output plugin:\" select_s[0] output_plugin \"ALSA output plugin\" ... ;\n"
+"property \"Output device:\" select_s[0] ID_soundcard default ... ;\n"
 "property \"Always convert 8 bit audio to 16 bit\" checkbox streamer.8_to_16 1;\n"
 "property \"Always convert 16 bit audio to 24 bit\" checkbox streamer.16_to_24 0;\n"
 "group_begin noname;\n"// override samplerate
     "group_require property \"Override samplerate\" checkbox streamer.override_samplerate 0;\n"
-    "property \"Target samplerate\" entry streamer.samplerate \"44100\";\n"
+    "property \"Target samplerate:\" entry streamer.samplerate \"44100\";\n"
     "group_begin noname2;\n"// based on input samplerate
-        "group_require property \"Based on imput samplerate\" checkbox streamer.use_dependent_samplerate 0;\n"
+        "group_require property \"Based on input samplerate\" checkbox streamer.use_dependent_samplerate 0;\n"
         "property \"For multiples of 48KHz (96K, 192K, ...):\" entry streamer.samplerate_mult_48 \"48000\";\n"
         "property \"For multiples of 44.1KHz (88.2K, 176.4K, ...):\" entry streamer.samplerate_mult_44 \"44100\";\n"
     "group_end;\n"
@@ -61,7 +61,7 @@ char * configdialog =
 // network.proxy.type should be a string "property \"Proxy Type:\" select[6] network.proxy.type 0 HTTP HTTP_1_0 SOCKS4 SOCKS5 SOCKS4A SOCKS5_HOSTNAME;\n"
 "property \"Proxy Username:\" entry network.proxy.username \"\";\n"
 "property \"Proxy Password:\" password network.proxy.password \"\";\n"
-// separator
+"separator;\n"
 "property \"HTTP User Agent\" entry network.http_user_agent \"deadbeef\";\n"
 // content type mapping
 
