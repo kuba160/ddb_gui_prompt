@@ -652,6 +652,13 @@ property_t * property_get (property_t **properties, const char * key) {
             return properties[i];
         }
     }
+    // try num
+    char * endptr;
+    int num = strtol (key, &endptr, 10);
+    if (endptr != key && num < i) {
+        property_update (properties[num]);
+        return properties[num];
+    }
     return NULL;
 }
 
