@@ -374,14 +374,7 @@ char * settings_plugins (int argc, char * argv[], int iter) {
         else if (strcmp (argv[2],"config") == 0) {
             if (plugins[num]->configdialog) {
                 // list options
-                int i;
-                struct property * prop;
-                for (i = 0; (prop = plugin_properties[num][i]); i++) {
-                    property_update (prop);
-                    printf ("%d: %s\n", i, prop->name);
-                    printf ("%s = %s\n(default: %s)\n\n", prop->key, prop->val, prop->def);
-                }
-
+                properties_print (plugin_properties[num]);
             }
             else {
                 printf ("(no config)\n");
@@ -405,13 +398,7 @@ char * settings_plugins (int argc, char * argv[], int iter) {
                     printf ("Property %s for plugin %s not found.\n", argv[3], plugin_names[num]);
                     return NULL;
                 }
-                // print option
-                char * value = "(no value)";
-                if (prop->val) {
-                    value = prop->val;
-                }
-                printf ("%s\n", prop->name);
-                printf ("%s = %s (default: %s)\n", prop->key, value, prop->def);
+                property_print (prop);
                 return NULL;
             }
             else {
