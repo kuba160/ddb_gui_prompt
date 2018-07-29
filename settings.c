@@ -120,8 +120,10 @@ char * settings_config (int argc, char * argv[], int iter) {
             DB_conf_item_t *item2 = NULL;
             item2 = deadbeef->conf_find (argv[1], item);
             if (item2) {
-                printf ("ambigous?!\n");
-                //return NULL;
+                if (strcmp (item2->key, argv[1]) != 0) {
+                    printf ("Config option %s not found.\n", argv[1]);
+                    return NULL;
+                }
             }
         }
         printf ("%s = %s\n", item->key, item->value);
@@ -165,8 +167,9 @@ char * settings_config (int argc, char * argv[], int iter) {
             DB_conf_item_t *item2 = NULL;
             item2 = deadbeef->conf_find (argv[1], item);
             if (item2) {
-                printf ("ambigous?!\n");
-                //return NULL;
+                if (strcmp (item2->key, argv[1]) != 0) {
+                    printf ("Config option %s not found, creating.\n", argv[1]);
+                }
             }
         }
         // validate type
