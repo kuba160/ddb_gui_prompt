@@ -108,8 +108,7 @@ char * settings_config (int argc, char * argv[], int iter) {
     if (argc == 1) {
         return CMD_DIRECTORY;
     }
-
-    if (argc == 2) {
+    else if (argc == 2) {
         // check if item exists, then print
         DB_conf_item_t *item = NULL;
         item = deadbeef->conf_find (argv[1], item);
@@ -128,7 +127,7 @@ char * settings_config (int argc, char * argv[], int iter) {
         printf ("%s = %s\n", item->key, item->value);
         return NULL;
     }
-    if (argc == 3) {
+    else if (argc == 3) {
         int i;
         int correct = 0;
         for (i = 0; types[i] != NULL; i++) {
@@ -154,7 +153,7 @@ char * settings_config (int argc, char * argv[], int iter) {
             return NULL;
         }
     }
-    if (argc == 4) {
+    else if (argc == 4) {
         // check if item exists
         DB_conf_item_t *item = NULL;
         item = deadbeef->conf_find (argv[1], item);
