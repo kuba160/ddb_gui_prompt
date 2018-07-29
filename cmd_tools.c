@@ -697,6 +697,9 @@ int property_set (property_t *property, const char * value) {
         printf ("Failed to set property %s.\n", property->key);
         return -1;
     }
+
+    printf ("Debug: setting key directly to option\n");
+    printf ("%s = %s\n", property->key, value);
     deadbeef->conf_set_str (property->key, value);
     return 0;
 }
@@ -1063,7 +1066,8 @@ void properties_free (property_t ** argv) {
 void property_free (struct property * prop) {
     free (prop->name);
     free (prop->key);
-    free (prop->val);
+    if (prop->type != TYPE_SELECT)
+        free (prop->val);
     if (prop->val_possible) {
         int i;
         for (i = 0; prop->val_possible[i]; i++)
