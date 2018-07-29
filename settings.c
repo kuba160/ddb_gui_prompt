@@ -387,6 +387,9 @@ char * settings_plugins (int argc, char * argv[], int iter) {
             const char * types[] = {"DB_PLUGIN_DECODER", "DB_PLUGIN_OUTPUT", "DB_PLUGIN_DSP", "DB_PLUGIN_MISC", "DB_PLUGIN_VFS", "DB_PLUGIN_PLAYLIST", "DB_PLUGIN_GUI", NULL };
             printf ("%s: %s\n", plugins[num]->name, types[plugins[num]->type - 1]);
         }
+        else {
+            printf ("Unknown option \"%s\"\n", argv[2]);
+        }
         return NULL;
     }
     if (argc == 4) {
