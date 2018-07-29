@@ -716,6 +716,59 @@ int property_set (property_t *property, const char * value) {
     return 0;
 }
 
+int properties_print (property_t ** properties) {
+    int i;
+    for (i = 0; properties[i]; i++) {
+        const char * color = KNRM;
+        if (is_property_available (properties[i]) == 0)
+            color = KDIM;
+        printf ("%s%d: ", color, i);
+        property_print (properties[i]);
+        printf ("\n" KNRM);
+    }
+    return 0;
+}
+
+int property_print (property_t * prop) {
+    property_update (prop);
+    printf ("%s\n", prop->name);
+    int len = 64;
+    if (prop->val) {
+        len = strlen(prop->def) + 1;
+    }
+    char value_b[len + 2];
+    if (prop->val) {
+        if (has_spaces(prop->val)) {
+            sprintf (value_b, "\"%s\"", prop->val);
+        }
+        else {
+            strcpy (value_b, prop->val);
+        }
+    }
+    else {
+        sprintf (value_b, "(%s)", _("None"));
+    }
+    len = 64;
+    if (prop->def) {
+        len = strlen(prop->def) + 1;
+    }
+    char def_b[len + 2];
+    if (prop->def) {
+        if (has_spaces(prop->def)) {
+            sprintf (def_b, "\"%s\"", prop->def);
+        }
+        else {
+            strcpy (def_b, prop->def);
+        }
+    }
+    else {
+        sprintf (def_b, "(%s)", _("None"));
+    }
+    char *default_s = _("Default");
+    printf ("%s = %s\n(%s: %s)\n", prop->key, value_b, default_s, def_b);
+    return 0;
+}
+
 int is_property_available (property_t *prop) {
     if ((prop->type == TYPE_SELECT || prop->type == TYPE_SELECT_S) && prop->type_count == 0) {
         // no option

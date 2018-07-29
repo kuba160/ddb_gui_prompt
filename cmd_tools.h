@@ -163,6 +163,10 @@ property_t * property_get (property_t **properties, const char * key);
 
 int property_set (property_t *property, const char * value);
 
+int properties_print (property_t **properties);
+
+int property_print (property_t *property);
+
 int is_property_available (property_t *prop);
 
 property_t * property_requires (property_t *prop);
