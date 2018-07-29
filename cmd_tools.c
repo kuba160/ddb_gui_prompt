@@ -756,13 +756,13 @@ property_t ** properties_alloc (const char * cmd) {
 }
 
 char *property_groups_curr[5] = {NULL};
-struct property2 *requires_curr[5] = {NULL};
+struct property *requires_curr[5] = {NULL};
 
 struct property * property_alloc (char * string) {
     if (!string || strlen(string) == 0) {
         return NULL;
     }
-    struct property2 * temp = malloc (sizeof(struct property2));
+    struct property * temp = malloc (sizeof(struct property));
     memset (temp, 0, sizeof(struct property));
     if (!temp) {
         return NULL;
@@ -790,7 +790,7 @@ struct property * property_alloc (char * string) {
     int set_curr_require = 0;
     if (strcmp (argv[0], "property") != 0) {
         do {
-            // property2
+            // property
             if (strcmp (argv[0], "group_begin") == 0) {
                 int i;
                 for (i = 0; property_groups_curr[i]; i++);
@@ -1031,11 +1031,11 @@ struct property * property_alloc (char * string) {
             }
         }
     }
-    // property2
+    // property
     int r;
     for (r = 0; requires_curr[r]; r++);
     if (r > 0) {
-        temp->requires = (struct property2 *) requires_curr[r-1];
+        temp->requires = (struct property *) requires_curr[r-1];
     }
     else {
         temp->requires = NULL;
