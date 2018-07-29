@@ -99,6 +99,12 @@ char * settings_config (int argc, char * argv[], int iter) {
     const char *types[] = {"string", "int", "int64", "float", "delete", NULL};
     TAB_COMPLETION_TABLE (2,types);
     TAB_COMPLETION_END;
+    if (argc == -1) {
+        printf ("config: show or edit config value (useful if you know what you're doing)\n");
+        printf ("\t1: key\n");
+        printf ("\t2: type [string, int, int64, float, delete()]\n");
+        printf ("\t3: value (optional)\n");
+    }
     if (argc == 1) {
         return CMD_DIRECTORY;
     }
@@ -623,9 +629,17 @@ char * cmd_settings (int argc, char * argv[], int iter) {
     }
     TAB_COMPLETION_END
     if (argc == -1) {
+        if (argv[1]) {
+            int num = main_num(argv[1]);
+            if (num != -1)
+                return main_f[num] (-1, argv+1, -1);
+            else
+                return CMD_NOTFOUND;
+        }
         printf ("%s: customize player behavior\n", cmd_name(argv[0]));
-        printf ("\t config - set config values manually\n");
-        printf ("\t plugins - plugin specific options/information\n");
+        printf ("\t %-8s %-2s %s", "config",  "-", "set config values manually\n");
+        printf ("\t %-8s %-2s %s", "plugins", "-", "plugin specific options/information\n");
+        printf ("\t %-8s %-2s %s", "sound",   "-", "various output settings\n");
         // To be extended...
     }
     if (argc == 1) {
