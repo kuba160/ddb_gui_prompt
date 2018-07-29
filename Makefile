@@ -33,5 +33,3 @@ props.c: properties_gen
 
 clean:
 	rm -fv $(PLUGNAME).o $(C_FILES_OUT) props.c props.h $(PLUGNAME_PREFIX)_$(PLUGNAME).$(SUFFIX)
-
-.PHONY: properties_gen
