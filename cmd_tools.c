@@ -656,15 +656,28 @@ int property_set (property_t *property, const char * value) {
     // todo evaluate prop_curr->type_string
     // char *config_argv[] = {"config_i", argv[3], "string", argv[4], NULL };
     //settings_config (4, config_argv, -1);
-    if (property->type == TYPE_SELECT) {
+    if (is_property_available (property) == 0) {
+        property_t *need = property_requires (property);
+        printf ("Property requires %s to be enabled!\n", need->key);
+        return -1;
+    }
+    if (property->type == TYPE_SELECT || property->type == TYPE_SELECT_S) {
         char *value_unescaped = strdup_unescaped (value);
         int i;
         for (i = 0; property->val_possible[i]; i++) {
             if (strcmp (property->val_possible[i], value_unescaped) == 0) {
-                printf ("%s = %s\n", property->key, value);
-                free (value_unescaped);
-                deadbeef->conf_set_int (property->key, i);
-                return 0;
+                if (property->type == TYPE_SELECT_S) {
+                    printf ("%s = %s\n", property->key, value);
+                    deadbeef->conf_set_str (property->key, value_unescaped);
+                    free (value_unescaped);
+                    return 0;
+                }
+                else {
+                    printf ("%s = %s\n", property->key, value);
+                    free (value_unescaped);
+                    deadbeef->conf_set_int (property->key, i);
+                    return 0;
+                }
             }
         }
         free (value_unescaped);
@@ -672,7 +685,12 @@ int property_set (property_t *property, const char * value) {
         char *endptr;
         int num = strtol (value, &endptr, 10);
         if (value != endptr && num < property->type_count) {
-            deadbeef->conf_set_int (property->key, num);
+            if (property->type == TYPE_SELECT_S) {
+                deadbeef->conf_set_str (property->key, property->val_possible[num]);
+            }
+            else {
+                deadbeef->conf_set_int (property->key, num);
+            }
             printf ("%s = \"%s\"\n", property->key, property->val_possible[num]);
             return 0;
         }
@@ -936,11 +954,18 @@ struct property * property_alloc (char * string) {
         }
     }
     else if (strncmp (argv[2], "select", 6) == 0) {
-        temp->type = TYPE_SELECT;
-        temp->type_string = "select";
+        char * count_s = argv[2] + 7;
+        if (strncmp (argv[2], "select_s", 8) == 0) {
+            temp->type = TYPE_SELECT_S;
+            temp->type_string = "select_s";
+            count_s += 2;
+        }
+        else {
+            temp->type = TYPE_SELECT;
+            temp->type_string = "select";
+        }
         // options
         {
-            char * count_s = argv[2]+7;
             char *endptr = NULL;
             temp->type_count = strtol (count_s, &endptr, 10);
             if (count_s == endptr) {
@@ -956,7 +981,7 @@ struct property * property_alloc (char * string) {
     }
 
     // default values
-    if (temp->type == TYPE_SELECT && temp->type_count) {
+    if ((temp->type == TYPE_SELECT || temp->type == TYPE_SELECT_S) && temp->type_count) {
         // gen temp->val_possible
         temp->val_possible = malloc (sizeof (char *) * (temp->type_count +1));
         if (!temp->val_possible) {
@@ -970,12 +995,17 @@ struct property * property_alloc (char * string) {
         }
         temp->val_possible[i] = NULL;
         // gen temp->def
-        char *endptr;
-        int num = strtol (argv[4], &endptr, 10);
-        if (endptr == argv[4]) {
-            printf ("strtol failed for %s, is \"%s\" a number?\n", argv[3], argv[4]);
+        if (temp->type == TYPE_SELECT_S) {
+            temp->def = strdup_unescaped (argv[4]);
         }
-        temp->def = strdup (temp->val_possible[num]);
+        else {
+            char *endptr;
+            int num = strtol (argv[4], &endptr, 10);
+            if (endptr == argv[4]) {
+                printf ("strtol failed for %s, is \"%s\" a number?\n", argv[3], argv[4]);
+            }
+            temp->def = strdup (temp->val_possible[num]);
+        }
     }
     else {
         temp->def = strdup_unescaped (argv[4]);
@@ -994,7 +1024,7 @@ struct property * property_alloc (char * string) {
                 if (endptr == item->value) {
                     printf ("strtol failed\n");
                 }
-                temp->val = strdup (temp->val_possible[num]);
+                temp->val = temp->val_possible[num];
             }
             else {
                 temp->val = strdup(item->value);

@@ -154,7 +154,7 @@ int argv_cat (char ** to, char ** from);
 // Properties
 
 enum property_type {
-    TYPE_ENTRY, TYPE_PASSWORD, TYPE_FILE, TYPE_CHECKBOX, TYPE_HSCALE, TYPE_SPINBTN, TYPE_VSCALE, TYPE_SELECT
+    TYPE_ENTRY, TYPE_PASSWORD, TYPE_FILE, TYPE_CHECKBOX, TYPE_HSCALE, TYPE_SPINBTN, TYPE_VSCALE, TYPE_SELECT, TYPE_SELECT_S
 };
 
 int properties_count (struct property ** properties);
