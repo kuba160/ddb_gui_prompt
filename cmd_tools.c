@@ -704,6 +704,42 @@ int property_set (property_t *property, const char * value) {
     return 0;
 }
 
+int is_property_available (property_t *prop) {
+    if ((prop->type == TYPE_SELECT || prop->type == TYPE_SELECT_S) && prop->type_count == 0) {
+        // no option
+        return 0;
+    }
+    property_t *ret = property_requires (prop);
+    if (ret) {
+        return 0;
+    }
+    return 1;
+}
+
+property_t * property_requires (property_t *prop) {
+    property_t *check = prop;
+    while ((check = check->requires)) {
+        property_update (check);
+        if (check->val) {
+            char *endptr;
+            int num = strtol (check->val, &endptr, 10);
+            if (check->val == endptr) {
+                printf ("check->val to num failed, assuming true?\n");
+                continue;
+            }
+            if (num == 0) {
+                return check;
+            }
+            continue;
+        }
+        else {
+            printf ("%s: check->val is empty, should check def?\n", check->key);
+            continue;
+        }
+    }
+    return NULL;
+}
+
 property_t ** properties_alloc (const char * cmd) {
     // build properties list
     int properties_size = PROPERTIES_MAX;

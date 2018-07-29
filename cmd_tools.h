@@ -163,6 +163,10 @@ property_t * property_get (property_t **properties, const char * key);
 
 int property_set (property_t *property, const char * value);
 
+int is_property_available (property_t *prop);
+
+property_t * property_requires (property_t *prop);
+
 struct property ** properties_alloc (const char * string);
 
 struct property * property_alloc (char * string);
