@@ -26,6 +26,7 @@
 #include <string.h>
 #include <deadbeef/deadbeef.h>
 #include "cmd_tools.h"
+#include "common.h"
 
 extern DB_functions_t *deadbeef;
 
