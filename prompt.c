@@ -24,6 +24,7 @@
 #include <deadbeef/deadbeef.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <signal.h>
@@ -73,6 +74,12 @@ void intHandler (int dummy) {
 
 static int
 ui_start (void) {
+    
+    if (!isatty(fileno(stdin)) || !isatty(fileno(stdout))) {
+        deadbeef->sendmessage (DB_EV_TERMINATE, 0, 0, 0);
+        return 1;
+    }
+    
     trace ("ui_start\n");
     signal(SIGINT, intHandler);
     struct winsize w;
