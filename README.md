@@ -1,6 +1,8 @@
 # ddb_gui_prompt
 Console user interface for DeaDBeeF. Many things are not implemented yet.
 
+This plugin is using `libreadline`, to compile on Debian/Ubuntu download `libreadline-dev`.
+
 Available:
 - Basic information (info)
 - Basic playback control (play, pause, stop, resume, prev, next, seek, volume)
