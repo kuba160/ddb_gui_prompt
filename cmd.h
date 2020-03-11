@@ -60,6 +60,8 @@ char * cmd_playlists (int argc, char * argv[], int iter);
 
 char * cmd_info (int argc, char * argv[], int iter);
 
+char * cmd_add_dir (int argc, char * argv[], int iter);
+
 char * cmd_dirm (int argc, char * argv[], int iter);
 
 char * cmd_generator (const char *text, int state);

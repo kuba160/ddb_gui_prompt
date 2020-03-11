@@ -26,7 +26,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#ifndef __MINGW32__
 #include <sys/ioctl.h>
+#endif
 #include <signal.h>
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -82,13 +84,17 @@ ui_start (void) {
     
     trace ("ui_start\n");
     signal(SIGINT, intHandler);
+    #ifndef __MINGW32__
     struct winsize w;
     ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
     if (w.ws_col >= 115)
         printf ("%s",greeter_big);
     else if (w.ws_col >= 80)
         printf ("%s",greeter_small);
-    
+    #else
+    printf ("%s",greeter_small);
+    #endif
+
     // readline completion function
     rl_attempted_completion_function = cmd_completion;
     rl_completer_quote_characters = "\"";

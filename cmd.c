@@ -39,8 +39,8 @@ extern DB_gui_t plugin;
 extern DB_functions_t *deadbeef;
 extern int ui_running;
 
-const char * cmd_s[] = {"help", "play", "pause", "resume", "stop", "next", "prev", "seek", "signal", "volume", "quit", "list", "playlist", "playlists", "info", "settings", 0};
-char * (*cmd_f[])(int, char *[], int) = {cmd_help, cmd_play, cmd_play_pause, cmd_play_pause, cmd_stop, cmd_next, cmd_prev, cmd_seek, cmd_signal, cmd_volume, cmd_quit, cmd_list, cmd_playlist, cmd_playlists, cmd_info, cmd_settings, NULL};
+const char * cmd_s[] = {"help", "play", "pause", "resume", "stop", "next", "prev", "seek", "signal", "volume", "quit", "list", "playlist", "playlists", "info", "add_dir", "settings", 0};
+char * (*cmd_f[])(int, char *[], int) = {cmd_help, cmd_play, cmd_play_pause, cmd_play_pause, cmd_stop, cmd_next, cmd_prev, cmd_seek, cmd_signal, cmd_volume, cmd_quit, cmd_list, cmd_playlist, cmd_playlists, cmd_info, cmd_add_dir, cmd_settings, NULL};
 
 const char * dirm_s[] = {"next", "prev", "exit", "list", "cd", "quit", "help",  NULL};
 
@@ -674,6 +674,27 @@ char * cmd_info (int argc, char * argv[], int iter) {
         if (curr_track)
             deadbeef->pl_item_unref (curr_track);
     }
+    return NULL;
+}
+
+char * cmd_add_dir (int argc, char * argv[], int iter) {
+    NO_TAB_COMPLETION
+    if (argc <= 0) {
+        printf ("%s: adds directory to current playlist\n", cmd_name(argv[0]));
+        printf ("\t1: directory to add\n");
+        return NULL;
+    }
+    // argv[1] is dirname (if exists)
+    if (argc == 2) {
+        // visibility = -1
+        // todo callback: int (*callback)(DB_playItem_t *it, void *user_data), void *user_data
+        ddb_playlist_t* plt = deadbeef->plt_get_curr ();
+        deadbeef->plt_add_dir2 (-1, plt, argv[1], NULL, NULL);
+    }
+    else {
+        printf ("%s: too many arguments passed\n", cmd_name(argv[0]));
+    }
+
     return NULL;
 }
 

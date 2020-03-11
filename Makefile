@@ -18,6 +18,10 @@ LIBS=-lreadline
 C_FILES= assets.c cmd.c cmd_tools.c props.c settings.c
 C_FILES_OUT = $(C_FILES:.c=.o)
 
+ifeq ($(OS),Windows_NT)
+	LIBS+= `pkg-config --libs glib-2.0` -lintl
+endif
+
 all: props.c
 	$(CC) -std=$(STD) -c $(CFLAGS) $(PLUGNAME).c $(C_FILES)
 	$(CC) -std=$(STD) -shared $(CFLAGS) -o $(PLUGNAME_PREFIX)_$(PLUGNAME).$(SUFFIX) $(PLUGNAME).o $(C_FILES_OUT) $(LIBS)
