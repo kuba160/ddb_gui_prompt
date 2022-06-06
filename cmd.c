@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <limits.h>
+#include <float.h>
 
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -591,6 +592,9 @@ char * cmd_info (int argc, char * argv[], int iter) {
             printf ("%s\n",buffer);
 
             float item_length = deadbeef->pl_get_item_duration (curr_track);
+            if (item_length < 0.1) {
+                item_length = FLT_MAX;
+            }
             float playback_pos = deadbeef->streamer_get_playpos ();
             float percent = playback_pos/item_length;
             #define PROGRESSBAR_LEN 20
