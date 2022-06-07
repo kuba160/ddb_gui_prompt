@@ -35,13 +35,25 @@
 #include "cmd.h"
 #include "cmd_tools.h"
 #include "settings.h"
+#include "cover.h"
 
 extern DB_gui_t plugin;
 extern DB_functions_t *deadbeef;
 extern int ui_running;
 
-const char * cmd_s[] = {"help", "play", "pause", "resume", "stop", "next", "prev", "seek", "signal", "volume", "quit", "list", "playlist", "playlists", "info", "add_dir", "settings", 0};
-char * (*cmd_f[])(int, char *[], int) = {cmd_help, cmd_play, cmd_play_pause, cmd_play_pause, cmd_stop, cmd_next, cmd_prev, cmd_seek, cmd_signal, cmd_volume, cmd_quit, cmd_list, cmd_playlist, cmd_playlists, cmd_info, cmd_add_dir, cmd_settings, NULL};
+typedef char *(*cmd_array[])(int, char *[], int);
+
+const char * cmd_s[] = {"help", "play", "pause", "resume",
+                        "stop", "next", "prev", "seek",
+                        "signal", "volume", "quit", "list",
+                        "playlist", "playlists", "info", "add_dir",
+                        "settings","cover", 0};
+
+cmd_array cmd_f = {cmd_help, cmd_play, cmd_play_pause, cmd_play_pause,
+                   cmd_stop, cmd_next, cmd_prev, cmd_seek,
+                   cmd_signal, cmd_volume, cmd_quit, cmd_list,
+                   cmd_playlist, cmd_playlists, cmd_info, cmd_add_dir,
+                   cmd_settings, cmd_cover, NULL};
 
 const char * dirm_s[] = {"next", "prev", "exit", "list", "cd", "quit", "help",  NULL};
 
