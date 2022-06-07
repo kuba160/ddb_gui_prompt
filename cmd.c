@@ -215,7 +215,7 @@ char * cmd_play_pause (int argc, char * argv[], int iter) {
     }
     if (cmd_find(argv[0]) == cmd_num("resume")) {
         struct DB_output_s* output = deadbeef->get_output ();
-        if (output->state() != OUTPUT_STATE_PAUSED)
+        if (output->state() != DDB_PLAYBACK_STATE_PAUSED)
             return NULL;
     }
     deadbeef->sendmessage (DB_EV_TOGGLE_PAUSE, 0, 0, 0);
