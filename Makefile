@@ -15,16 +15,18 @@ PREFIX=~/.local/lib/deadbeef
 PLUGNAME=prompt
 PLUGNAME_PREFIX=ddb_gui
 LIBS=-lreadline
-C_FILES= assets.c cmd.c cmd_tools.c props.c settings.c cover.c
+C_FILES= assets.c cmd.c cmd_tools.c props.c settings.c cover.c prompt.c
 C_FILES_OUT = $(C_FILES:.c=.o)
 
 ifeq ($(OS),Windows_NT)
 	LIBS+= `pkg-config --libs glib-2.0` -lintl
 endif
 
-all: props.c
-	$(CC) -std=$(STD) -c $(CFLAGS) $(PLUGNAME).c $(C_FILES)
-	$(CC) -std=$(STD) -shared $(CFLAGS) -o $(PLUGNAME_PREFIX)_$(PLUGNAME).$(SUFFIX) $(PLUGNAME).o $(C_FILES_OUT) $(LIBS)
+%.o: %.c
+	$(CC) -std=$(STD) -c -o $@ $< $(CFLAGS)
+
+all: props.c $(C_FILES_OUT)
+	$(CC) -std=$(STD) -shared $(CFLAGS) -o $(PLUGNAME_PREFIX)_$(PLUGNAME).$(SUFFIX) $(C_FILES_OUT) $(LIBS)
 
 install:
 	cp $(PLUGNAME_PREFIX)_$(PLUGNAME).$(SUFFIX) $(PREFIX)
