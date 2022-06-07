@@ -11,7 +11,7 @@ CFLAGS=-fPIC -I /usr/local/include -O2 -Wall
 ifeq ($(DEBUG),1)
 CFLAGS +=-g -O0
 endif
-PREFIX=/usr/local/lib/deadbeef
+PREFIX=~/.local/lib/deadbeef
 PLUGNAME=prompt
 PLUGNAME_PREFIX=ddb_gui
 LIBS=-lreadline
