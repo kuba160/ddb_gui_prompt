@@ -32,6 +32,8 @@ const char *dirm_name (char *cmd);
 
 char * cmd_play (int argc, char * argv[], int iter);
 
+char * cmd_play_album (int argc, char * argv[], int iter);
+
 char * cmd_play_pause (int argc, char * argv[], int iter);
 
 /*char * cmd_play_generator(const char *text, int state);*/

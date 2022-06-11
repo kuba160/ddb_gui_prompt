@@ -147,14 +147,14 @@ const char *dirm_name (char *cmd) {
 }
 
 char * cmd_play (int argc, char * argv[], int iter) {
-    TAB_COMPLETION_ATA (1,2,3);
+    TAB_COMPLETION_ATA (1,3,2);
     TAB_COMPLETION_END
     if (argc <= 0) {
         printf ("%s: starts playback\n", cmd_name(argv[0]));
         printf ("Defaults: start playing current track\n");
         printf ("\t1: track num (optional)\n");
         printf ("OR\n");
-        printf ("\t1: artist\n\t2: title (optional)\n\t3: album (optional)\n\tUse \"*\" to search for specific title/album\n");
+        printf ("\t1: artist\n\t2: album (optional)\n\t3: title (optional)\n\tUse \"*\" to search for specific title/album\n");
         return NULL;
     }
     if (argc == 1) {
@@ -179,20 +179,10 @@ char * cmd_play (int argc, char * argv[], int iter) {
         }
         deadbeef->sendmessage (DB_EV_PLAY_NUM, 0, num, 0);
     }
-    else if (argc == 3) {
+    else if (argc <= 4 && argc >= 3) {
         ddb_playlist_t *plt = deadbeef->plt_get_curr();
-        DB_playItem_t* find = cmd_get_item (NULL, argv[1], argv[2], NULL);
-        int num = 0;
-        if (find) {
-            num = deadbeef->plt_get_item_idx (plt, find, PL_MAIN);
-            deadbeef->pl_item_unref (find);
-            deadbeef->sendmessage (DB_EV_PLAY_NUM, 0, num, 0);
-        }
-        deadbeef->plt_unref (plt);
-    }
-    else if (argc == 4) {
-        ddb_playlist_t *plt = deadbeef->plt_get_curr();
-        DB_playItem_t* find = cmd_get_item (NULL, argv[1], argv[2], argv[3]);
+        char *title_o = (argc == 4) ? argv[3] : NULL;
+        DB_playItem_t* find = cmd_get_item (NULL, argv[1], argv[2], title_o);
         int num = 0;
         if (find) {
             num = deadbeef->plt_get_item_idx (plt, find, PL_MAIN);

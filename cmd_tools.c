@@ -336,8 +336,8 @@ char * cmd_tab_complete_properties (struct property **table, char **argv, int it
     return cmd_tab_complete_table (strings, argv, iter);
 }
 
-// get item based on data (artist/title/album and playlist)
-DB_playItem_t* cmd_get_item (ddb_playlist_t *playlist, char * artist_o, char * title_o, char * album_o) {
+// get item based on data (artist/album/title and playlist)
+DB_playItem_t* cmd_get_item (ddb_playlist_t *playlist, char * artist_o, char * album_o, char * title_o) {
     ddb_playlist_t *plt;
     if (!playlist) {
         plt = deadbeef->plt_get_curr();
